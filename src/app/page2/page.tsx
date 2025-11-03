@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import styles from '@/styles/page2.module.css';
 
 export default function Page2() {
@@ -33,7 +34,9 @@ export default function Page2() {
       <div className={styles.leftSection}>
         <div className={styles.dashboardContent}>
           <h2 className={styles.welcomeTitle}>Welcome to the Learning Platform</h2>
-          <p className={styles.startText}>Start the process here</p>
+          <Link href="/page3" className={styles.startButton}>
+            Start the process here
+          </Link>
         </div>
       </div>
 
