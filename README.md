@@ -122,9 +122,6 @@ src/
 2. Follow the existing code style and TypeScript patterns.
 3. Add tests where feasible and run `npm run lint` before opening a PR.
 
-## License
-
-TBD. For internal Qualcomm prototyping and research use unless stated otherwise.
 
 ## Acknowledgments
 
