@@ -13,44 +13,11 @@ A modern web application built with Next.js 15, React 19, TypeScript, and React 
 - **Tailwind CSS** - Utility-first CSS framework
 - **CSS Modules** - Scoped styling for each page
 
-## Features
 
-- ✨ Three separate interactive 3D scenes
-- 🎨 Each page has its own custom styling
-- 🧩 Modular component architecture
-- 🎛️ Orbit controls for camera manipulation
-- 💡 Advanced lighting setups
-- 🎭 Different geometries and effects per scene
-- 📱 Responsive design
-- 🔄 Easy navigation between scenes
-- ✅ TypeScript support
-- 🔥 Hot reloading in development
 
 ## Pages Overview
-
-### Scene 1: Basic Shapes (`/page1`)
-- **Description**: A cube and sphere with basic interactions
-- **Features**: 
-  - Pink cube and light blue sphere
-  - Gradient background (sky to grass)
-  - Basic lighting setup
-- **Colors**: Green/Blue gradient background
-
-### Scene 2: Wireframe Torus (`/page2`)
-- **Description**: Rotating wireframe torus shapes with dark aesthetic
-- **Features**: 
-  - Two rotating wireframe torus objects
-  - Cyberpunk dark theme
-  - Cyan neon lighting
-- **Colors**: Dark blue/purple gradient background
-
-### Scene 3: Geometric Forms (`/page3`)
-- **Description**: A cone and icosahedron with purple aesthetic
-- **Features**: 
-  - Gold cone and pink icosahedron
-  - Rotating animations
-  - Gradient background
-- **Colors**: Purple gradient background
+- First Wireframe : Title Page
+- Second Page : Homepage
 
 ## Getting Started
 
@@ -70,7 +37,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser. You'll be
 
 Navigate between scenes using the buttons at the bottom of each page.
 
-## Project Structure
+## Project Structure to Begin Development
 
 ```
 src/
