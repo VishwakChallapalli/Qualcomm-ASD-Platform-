@@ -1,0 +1,170 @@
+# 3D Website with Next.js 15 + React Three Fiber
+
+A modern web application built with Next.js 15, React 19, TypeScript, and React Three Fiber featuring multiple interactive 3D scenes with separate pages, components, and styles.
+
+## Tech Stack
+
+- **Next.js 15** - React framework with App Router
+- **React 19** - Latest React with new features
+- **TypeScript** - Type-safe JavaScript
+- **React Three Fiber** - React renderer for Three.js
+- **@react-three/drei** - Useful helpers for React Three Fiber
+- **Three.js** - 3D graphics library
+- **Tailwind CSS** - Utility-first CSS framework
+- **CSS Modules** - Scoped styling for each page
+
+## Features
+
+- ✨ Three separate interactive 3D scenes
+- 🎨 Each page has its own custom styling
+- 🧩 Modular component architecture
+- 🎛️ Orbit controls for camera manipulation
+- 💡 Advanced lighting setups
+- 🎭 Different geometries and effects per scene
+- 📱 Responsive design
+- 🔄 Easy navigation between scenes
+- ✅ TypeScript support
+- 🔥 Hot reloading in development
+
+## Pages Overview
+
+### Scene 1: Basic Shapes (`/page1`)
+- **Description**: A cube and sphere with basic interactions
+- **Features**: 
+  - Pink cube and light blue sphere
+  - Gradient background (sky to grass)
+  - Basic lighting setup
+- **Colors**: Green/Blue gradient background
+
+### Scene 2: Wireframe Torus (`/page2`)
+- **Description**: Rotating wireframe torus shapes with dark aesthetic
+- **Features**: 
+  - Two rotating wireframe torus objects
+  - Cyberpunk dark theme
+  - Cyan neon lighting
+- **Colors**: Dark blue/purple gradient background
+
+### Scene 3: Geometric Forms (`/page3`)
+- **Description**: A cone and icosahedron with purple aesthetic
+- **Features**: 
+  - Gold cone and pink icosahedron
+  - Rotating animations
+  - Gradient background
+- **Colors**: Purple gradient background
+
+## Getting Started
+
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser. You'll be automatically redirected to Scene 1.
+
+Navigate between scenes using the buttons at the bottom of each page.
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── page.tsx                    # Home page (redirects to page1)
+│   ├── globals.css                 # Global styles
+│   ├── layout.tsx                  # Root layout
+│   ├── page1/
+│   │   └── page.tsx               # Scene 1 page
+│   ├── page2/
+│   │   └── page.tsx               # Scene 2 page
+│   └── page3/
+│       └── page.tsx               # Scene 3 page
+├── components/
+│   ├── Scene.tsx                   # Legacy scene component
+│   └── scenes/
+│       ├── Scene1.tsx              # Scene 1 3D component
+│       ├── Scene2.tsx              # Scene 2 3D component
+│       └── Scene3.tsx              # Scene 3 3D component
+└── styles/
+    ├── page1.module.css            # Scene 1 styles
+    ├── page2.module.css            # Scene 2 styles
+    └── page3.module.css            # Scene 3 styles
+```
+
+## Customization Guide
+
+### Modifying a Scene
+
+To customize a 3D scene, edit the corresponding file in `src/components/scenes/`:
+
+```typescript
+// Example: Modifying Scene1.tsx
+export default function Scene1() {
+  return (
+    <Canvas
+      camera={{ position: [0, 0, 5], fov: 75 }}
+      style={{ background: 'your-gradient-here' }}
+    >
+      {/* Add/modify 3D objects here */}
+    </Canvas>
+  );
+}
+```
+
+### Customizing Page Styles
+
+Each page has its own CSS module in `src/styles/`. Modify them independently:
+
+```css
+/* src/styles/page1.module.css */
+.title {
+  /* Customize title styling */
+}
+
+.navButton {
+  /* Customize navigation buttons */
+}
+```
+
+### Customizing Page Content
+
+Update the text and layout in each page file:
+
+```typescript
+// src/app/page1/page.tsx
+<h1 className={styles.title}>Your Custom Title</h1>
+<p className={styles.subtitle}>Your custom subtitle</p>
+```
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Adding a New Scene
+
+To add a new scene:
+
+1. Create a new component in `src/components/scenes/SceneX.tsx`
+2. Create a new CSS module in `src/styles/pageX.module.css`
+3. Create a new page directory `src/app/pageX/page.tsx`
+4. Add a link to it in the navigation buttons
+
+## Learn More
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Three Fiber Documentation](https://docs.pmnd.rs/react-three-fiber)
+- [Three.js Documentation](https://threejs.org/docs)
+- [@react-three/drei Documentation](https://github.com/pmndrs/drei)
+- [Drei Examples](https://drei.pmnd.rs/)
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new) from the creators of Next.js.
