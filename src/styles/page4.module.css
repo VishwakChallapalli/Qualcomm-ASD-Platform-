@@ -329,6 +329,28 @@
   margin-bottom: 2rem;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.achievementsLink {
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  background: rgba(0, 212, 255, 0.15);
+  color: #00bcd4;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  transition: all 0.2s ease;
+}
+
+.achievementsLink:hover {
+  background: rgba(0, 212, 255, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 212, 255, 0.25);
+}
+
 .contentTitle {
   font-size: 2rem;
   font-weight: 700;

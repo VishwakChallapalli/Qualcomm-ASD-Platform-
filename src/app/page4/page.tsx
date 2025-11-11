@@ -130,7 +130,12 @@ export default function Page4() {
         <div className={styles.mainContent}>
           <div className={styles.contentHeader}>
             <h1 className={styles.contentTitle}>My courses</h1>
-            <button className={styles.editCoursesButton}>Edit Courses</button>
+            <div className={styles.headerActions}>
+              <Link href="/page5" className={styles.achievementsLink}>
+                Achievements & Leaderboard
+              </Link>
+              <button className={styles.editCoursesButton}>Edit Courses</button>
+            </div>
           </div>
 
           <div className={styles.courseSection}>
