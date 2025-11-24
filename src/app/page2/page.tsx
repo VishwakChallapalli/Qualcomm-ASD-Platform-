@@ -9,14 +9,14 @@ export default function Page2() {
   const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
 
   const colors = ['#00d4ff', '#ff6b9d', '#ffd700', '#98fb98'];
-  const puzzleColors = useMemo(() => 
+  const puzzleColors = useMemo(() =>
     [...colors, ...colors].sort(() => Math.random() - 0.5),
     []
   );
 
   const handleColorClick = (index: number) => {
     if (matchedPairs.includes(index)) return;
-    
+
     if (selectedColor === null) {
       setSelectedColor(index.toString());
     } else {
@@ -34,7 +34,7 @@ export default function Page2() {
       <div className={styles.leftSection}>
         <div className={styles.dashboardContent}>
           <h2 className={styles.welcomeTitle}>Welcome to the Learning Platform</h2>
-          <Link href="/page3" className={styles.startButton}>
+          <Link href="/signup" className={styles.startButton}>
             Start the process here
           </Link>
         </div>
@@ -51,10 +51,9 @@ export default function Page2() {
             {puzzleColors.map((color, index) => (
               <button
                 key={index}
-                className={`${styles.puzzlePiece} ${
-                  selectedColor === index.toString() ? styles.selected : ''
-                } ${matchedPairs.includes(index) ? styles.matched : ''}`}
-                style={{ 
+                className={`${styles.puzzlePiece} ${selectedColor === index.toString() ? styles.selected : ''
+                  } ${matchedPairs.includes(index) ? styles.matched : ''}`}
+                style={{
                   backgroundColor: matchedPairs.includes(index) || selectedColor === index.toString() ? color : '#2a2a3e',
                   borderColor: matchedPairs.includes(index) ? '#00d4ff' : 'rgba(255, 255, 255, 0.3)'
                 }}
