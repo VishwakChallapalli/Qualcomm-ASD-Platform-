@@ -1,7 +1,5 @@
 # Qualcomm ASD Platform
 
-A web application featuring signup and login functionality using **Next.js** for the frontend and **Express/MongoDB** for the backend.
-
 ---
 
 ## Information for running the code from Raunak
