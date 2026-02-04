@@ -1,9 +1,0 @@
-numpy
-sounddevice
-soundfile
-speechrecognition
-librosa
-qai-hub
-Pillow
-opencv-python
-mediapipe
