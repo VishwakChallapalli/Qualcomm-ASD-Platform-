@@ -61,6 +61,7 @@ export default function Page5() {
   const [activeBoard, setActiveBoard] = useState<'daily' | 'allTime'>('daily');
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
+  const [showExploreDropdown, setShowExploreDropdown] = useState(false);
 
   useEffect(() => {
     const savedAvatar = localStorage.getItem('selectedAvatar');
@@ -73,6 +74,24 @@ export default function Page5() {
     }
   }, []);
 
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(`.${styles.exploreDropdown}`)) {
+        setShowExploreDropdown(false);
+      }
+    };
+
+    if (showExploreDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExploreDropdown]);
+
   const selectedAvatarData = selectedAvatar
     ? avatarOptions.find((option) => option.id === selectedAvatar)
     : null;
@@ -83,7 +102,37 @@ export default function Page5() {
     <div className={styles.container}>
       <div className={styles.topHeader}>
         <div className={styles.headerLeft}>
-          <button className={styles.exploreButton}>Explore ▼</button>
+          <div className={styles.exploreDropdown}>
+            <button 
+              className={styles.exploreButton}
+              onClick={() => setShowExploreDropdown(!showExploreDropdown)}
+            >
+              Explore ▼
+            </button>
+            {showExploreDropdown && (
+              <div className={styles.dropdownMenu}>
+                <div className={styles.dropdownSection}>
+                  <h4 className={styles.dropdownSectionTitle}>Games</h4>
+                  <Link 
+                    href="/games" 
+                    className={styles.dropdownItem}
+                    onClick={() => setShowExploreDropdown(false)}
+                  >
+                    🎮 All Games
+                  </Link>
+                </div>
+                <div className={styles.dropdownSection}>
+                  <h4 className={styles.dropdownSectionTitle}>Learning</h4>
+                  <Link href="/page4" className={styles.dropdownItem} onClick={() => setShowExploreDropdown(false)}>
+                    📚 Courses
+                  </Link>
+                  <Link href="/page5" className={styles.dropdownItem} onClick={() => setShowExploreDropdown(false)}>
+                    🏆 Achievements
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
           <div className={styles.searchContainer}>
             <span className={styles.searchIcon}>🔍</span>
             <input type="text" placeholder="Search" className={styles.searchInput} />

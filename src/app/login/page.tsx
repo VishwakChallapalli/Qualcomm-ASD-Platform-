@@ -3,11 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import styles from "@/styles/page3.module.css";
+import { useRouter } from "next/navigation";
+
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
+    const router = useRouter();
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
@@ -21,6 +24,10 @@ export default function LoginPage() {
 
             const data = await res.json();
             setMessage(data.message);
+            if (res.ok) {
+                // Redirect to page4 after successful login
+                router.push("/page4");
+            }
         } catch (err) {
             console.error(err);
             setMessage("Network error");

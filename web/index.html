@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>Emotion-Regulation Mini-Games (Prototype)</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header__title">
+        <h1>Emotion-Regulation Mini-Games</h1>
+        <p class="muted">Prototype • choose Provider → <b>Python + OpenCV</b> for real detection</p>
+      </div>
+      <div class="header__controls">
+        <a class="btn btn--ghost" href="./kids/">Kids Mode</a>
+        <button id="btnStartCamera" class="btn">Start camera</button>
+        <button id="btnStopCamera" class="btn btn--ghost" disabled>Stop camera</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Game</h2>
+
+        <div class="row">
+          <label class="label" for="selectGame">Mini-game</label>
+          <select id="selectGame" class="select"></select>
+          <button id="btnStartGame" class="btn">Start</button>
+          <button id="btnStopGame" class="btn btn--ghost" disabled>Stop</button>
+        </div>
+
+        <div id="gameRoot" class="gameRoot" aria-live="polite"></div>
+      </section>
+
+      <aside class="panel">
+        <h2>Emotion Input</h2>
+
+        <div class="row">
+          <label class="label" for="selectProvider">Provider</label>
+          <select id="selectProvider" class="select"></select>
+        </div>
+
+        <div id="providerControls" class="providerControls"></div>
+
+        <div class="status">
+          <div class="status__item">
+            <div class="status__label">Detected emotion</div>
+            <div id="detectedEmotion" class="status__value">—</div>
+          </div>
+          <div class="status__item">
+            <div class="status__label">Confidence</div>
+            <div id="detectedConfidence" class="status__value">—</div>
+          </div>
+        </div>
+
+        <h2>Camera (preview only)</h2>
+        <video id="camera" class="camera" playsinline autoplay muted></video>
+
+        <div class="note muted">
+          Tip: If you're using <b>Manual</b> provider, just select the emotion you want the game to "detect".
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer muted">
+      This is a logic prototype to validate adaptive gameplay loops; integrate the real model later via
+      <code>EmotionProvider</code>.
+    </footer>
+
+    <script type="module" src="./app.js?v=2026-01-09"></script>
+  </body>
+</html>

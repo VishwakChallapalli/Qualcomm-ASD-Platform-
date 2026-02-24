@@ -1,0 +1,293 @@
+.container {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backLink {
+  color: #00d4ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.backLink:hover {
+  color: #00b8d4;
+  text-decoration: underline;
+}
+
+.title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.success {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.statusBox {
+  text-align: center;
+  background: rgba(152, 251, 152, 0.1);
+  border: 1px solid rgba(152, 251, 152, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+.statusText {
+  color: #98fb98;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.statusNote {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.launchButton {
+  display: inline-block;
+  padding: 1.25rem 2.5rem;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.9), rgba(124, 92, 255, 0.7));
+  border: 2px solid rgba(124, 92, 255, 0.8);
+  color: white;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  text-align: center;
+  width: fit-content;
+  box-shadow: 0 4px 20px rgba(124, 92, 255, 0.3);
+}
+
+.launchButton:hover {
+  background: linear-gradient(135deg, rgba(124, 92, 255, 1), rgba(124, 92, 255, 0.85));
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(124, 92, 255, 0.5);
+}
+
+.infoBox {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.infoBox h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #00d4ff;
+}
+
+.infoBox p {
+  margin: 0.75rem 0;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+}
+
+.urlCode {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #00d4ff;
+  font-size: 0.9rem;
+}
+
+.infoNote {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.9rem;
+  margin-top: 1rem !important;
+}
+
+.checking {
+  text-align: center;
+  padding: 2rem;
+}
+
+.checking p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+}
+
+.stepHeader {
+  margin: 1.5rem 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: #00d4ff;
+}
+
+.stepNote {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0.5rem 0 1rem 0;
+  line-height: 1.6;
+}
+
+.inlineCode {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #00d4ff;
+  font-size: 0.85rem;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.directLinkButton {
+  padding: 0.75rem 1.5rem;
+  background: rgba(124, 92, 255, 0.2);
+  border: 2px solid rgba(124, 92, 255, 0.6);
+  color: #7c5cff;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.directLinkButton:hover {
+  background: rgba(124, 92, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.troubleshootingBox {
+  background: rgba(255, 107, 157, 0.1);
+  border: 1px solid rgba(255, 107, 157, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.troubleshootingBox h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #ff6b9d;
+}
+
+.troubleshootingBox ol,
+.troubleshootingBox ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.troubleshootingBox li {
+  margin: 0.75rem 0;
+  line-height: 1.6;
+}
+
+.error {
+  max-width: 600px;
+  text-align: center;
+}
+
+.errorTitle {
+  font-size: 1.5rem;
+  margin: 0 0 1rem 0;
+  color: #ff6b9d;
+}
+
+.errorText {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 2rem 0;
+}
+
+.instructions {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: left;
+}
+
+.instructions h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.instructions ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.instructions li {
+  margin: 0.5rem 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.codeBlock {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.codeBlock code {
+  color: #00d4ff;
+}
+
+.note {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.refreshButton {
+  padding: 0.75rem 1.5rem;
+  background: rgba(0, 212, 255, 0.2);
+  border: 2px solid #00d4ff;
+  color: #00d4ff;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.refreshButton:hover {
+  background: rgba(0, 212, 255, 0.3);
+  transform: scale(1.05);
+}

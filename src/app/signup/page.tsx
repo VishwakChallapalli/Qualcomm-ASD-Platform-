@@ -27,7 +27,7 @@ export default function SignupPage() {
 
             if (res.ok) {
                 // Redirect to page4 after successful login
-                router.push("/page4");
+                router.push("/page3");
             }
         } catch (err) {
             console.error(err);

@@ -28,6 +28,10 @@
   gap: 1rem;
 }
 
+.exploreDropdown {
+  position: relative;
+}
+
 .exploreButton {
   padding: 0.55rem 1.25rem;
   border: 1px solid #d3dae6;
@@ -42,6 +46,51 @@
 .exploreButton:hover {
   background: #f1f4f9;
   border-color: #c2cbe0;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background: #fff;
+  border: 1px solid #e4e9f2;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdownSection {
+  padding: 0.5rem 0;
+}
+
+.dropdownSection:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdownSectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem 0.25rem 1rem;
+  margin: 0;
+}
+
+.dropdownItem {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: #f1f4f9;
 }
 
 .searchContainer {

@@ -1,0 +1,310 @@
+.container {
+  width: 100%;
+  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(135deg, #98fb98 0%, #7dd87d 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.header {
+  max-width: 1000px;
+  margin: 0 auto 2rem auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.backButton {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.gameContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.statsBar {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+}
+
+.statLabel {
+  display: block;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d8659;
+}
+
+.targetSection {
+  text-align: center;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 1.5rem 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.targetEmotion {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 4px solid;
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.targetEmoji {
+  font-size: 6rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.targetName {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.emotionsGrid {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.chooseTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.emotionsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.emotionButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  border: 3px solid;
+  border-radius: 16px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.emotionButton:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.emotionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.emotionButton.selected {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.emotionButton.correct {
+  animation: correctPulse 0.5s ease;
+}
+
+@keyframes correctPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.emotionEmoji {
+  font-size: 3rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.emotionLabel {
+  color: #333;
+}
+
+.feedback {
+  padding: 1.5rem;
+  border-radius: 16px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  animation: slideIn 0.3s ease;
+}
+
+.feedbackCorrect {
+  background: rgba(152, 251, 152, 0.3);
+  color: #2d8659;
+  border: 2px solid #98fb98;
+}
+
+.feedbackWrong {
+  background: rgba(255, 107, 157, 0.3);
+  color: #c41e3a;
+  border: 2px solid #ff6b9d;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.resetButton {
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  align-self: center;
+}
+
+.resetButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.instructionsCard {
+  max-width: 600px;
+  margin: 2rem auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.instructionsCard h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.instructionsCard ol {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 2;
+  margin: 0 0 2rem 0;
+  padding-left: 1.5rem;
+}
+
+.instructionsCard li {
+  margin: 0.5rem 0;
+}
+
+.startButton {
+  width: 100%;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #98fb98 0%, #7dd87d 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(152, 251, 152, 0.4);
+}
+
+.startButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(152, 251, 152, 0.5);
+}
+
+@media (max-width: 768px) {
+  .emotionsList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .targetEmoji {
+    font-size: 4rem;
+  }
+
+  .targetName {
+    font-size: 1.5rem;
+  }
+}

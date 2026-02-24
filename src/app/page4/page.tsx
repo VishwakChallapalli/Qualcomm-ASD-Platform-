@@ -17,6 +17,7 @@ const avatarOptions = [
 export default function Page4() {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
+  const [showExploreDropdown, setShowExploreDropdown] = useState(false);
 
   useEffect(() => {
     // Load selected avatar from localStorage
@@ -29,6 +30,24 @@ export default function Page4() {
       setAvatarColor(savedColor);
     }
   }, []);
+
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(`.${styles.exploreDropdown}`)) {
+        setShowExploreDropdown(false);
+      }
+    };
+
+    if (showExploreDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExploreDropdown]);
 
   const selectedAvatarData = selectedAvatar 
     ? avatarOptions.find(a => a.id === selectedAvatar)
@@ -47,7 +66,37 @@ export default function Page4() {
       {/* Top Header Bar */}
       <div className={styles.topHeader}>
         <div className={styles.headerLeft}>
-          <button className={styles.exploreButton}>Explore ▼</button>
+          <div className={styles.exploreDropdown}>
+            <button 
+              className={styles.exploreButton}
+              onClick={() => setShowExploreDropdown(!showExploreDropdown)}
+            >
+              Explore ▼
+            </button>
+            {showExploreDropdown && (
+              <div className={styles.dropdownMenu}>
+                <div className={styles.dropdownSection}>
+                  <h4 className={styles.dropdownSectionTitle}>Games</h4>
+                  <Link 
+                    href="/games" 
+                    className={styles.dropdownItem}
+                    onClick={() => setShowExploreDropdown(false)}
+                  >
+                    🎮 All Games
+                  </Link>
+                </div>
+                <div className={styles.dropdownSection}>
+                  <h4 className={styles.dropdownSectionTitle}>Learning</h4>
+                  <Link href="/page4" className={styles.dropdownItem} onClick={() => setShowExploreDropdown(false)}>
+                    📚 Courses
+                  </Link>
+                  <Link href="/page5" className={styles.dropdownItem} onClick={() => setShowExploreDropdown(false)}>
+                    🏆 Achievements
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
           <div className={styles.searchContainer}>
             <span className={styles.searchIcon}>🔍</span>
             <input 
@@ -131,6 +180,9 @@ export default function Page4() {
           <div className={styles.contentHeader}>
             <h1 className={styles.contentTitle}>My courses</h1>
             <div className={styles.headerActions}>
+              <Link href="/admin" className={styles.adminLink}>
+                Admin Console
+              </Link>
               <Link href="/page5" className={styles.achievementsLink}>
                 Achievements & Leaderboard
               </Link>
@@ -145,17 +197,24 @@ export default function Page4() {
             </div>
 
             <div className={styles.courseList}>
-              {courseList.map((course, index) => (
-                <div key={index} className={styles.courseItem}>
-                  <div className={styles.courseIcon}>📚</div>
-                  <div className={styles.courseDetails}>
-                    <h3 className={styles.courseName}>{course}</h3>
-                    {index === 0 && (
-                      <button className={styles.startButton}>Start</button>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {courseList.map((course, index) => {
+                const courseSlug = course.toLowerCase().replace(/\s+/g, '-');
+                return (
+                  <Link 
+                    key={index} 
+                    href={`/tests/${courseSlug}`}
+                    className={styles.courseItem}
+                  >
+                    <div className={styles.courseIcon}>📚</div>
+                    <div className={styles.courseDetails}>
+                      <h3 className={styles.courseName}>{course}</h3>
+                      <span className={styles.startButton}>
+                        Start Test →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
