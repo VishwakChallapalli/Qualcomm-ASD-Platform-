@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/page4.module.css';
+import EmotionMonitor from '@/components/EmotionMonitor';
 
 // Avatar options to match what was selected
 const avatarOptions = [
@@ -226,6 +227,7 @@ export default function Page4() {
           </div>
         </div>
       </div>
+      <EmotionMonitor />
     </div>
   );
 }

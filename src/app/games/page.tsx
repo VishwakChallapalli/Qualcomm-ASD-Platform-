@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/games.module.css';
+import EmotionMonitor from '@/components/EmotionMonitor';
 
 // Avatar options to match what was selected
 const avatarOptions = [
@@ -132,6 +133,7 @@ export default function GamesPage() {
           ))}
         </div>
       </div>
+      <EmotionMonitor />
     </div>
   );
 }

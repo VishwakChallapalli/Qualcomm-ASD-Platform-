@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/page5.module.css';
+import EmotionMonitor from '@/components/EmotionMonitor';
 
 const dailyLeaders = [
   { name: 'Avery', points: 1500 },
@@ -254,6 +255,7 @@ export default function Page5() {
           </div>
         </section>
       </div>
+      <EmotionMonitor />
     </div>
   );
 }

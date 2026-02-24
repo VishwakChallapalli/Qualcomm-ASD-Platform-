@@ -2,3 +2,5 @@ node_modules
 .next
 .env
 server/.env
+venv/
+emotion-server/venv/
