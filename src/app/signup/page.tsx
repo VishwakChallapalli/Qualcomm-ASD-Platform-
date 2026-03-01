@@ -16,7 +16,7 @@ export default function SignupPage() {
         e.preventDefault();
 
         try {
-            const res = await fetch("http://localhost:5001/signup", {
+            const res = await fetch("/api/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ accountName, email, password }),
@@ -26,7 +26,7 @@ export default function SignupPage() {
             setMessage(data.message);
 
             if (res.ok) {
-                // Redirect to page4 after successful login
+                // Redirect to page3 after successful login
                 router.push("/page3");
             }
         } catch (err) {

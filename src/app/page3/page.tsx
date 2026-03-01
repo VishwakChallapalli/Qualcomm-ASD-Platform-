@@ -45,12 +45,29 @@ export default function Page3() {
     setIsConfirmed(false);
   };
 
-  const handleConfirm = () => {
+  async function handleConfirm(e: React.FormEvent) {
+    e.preventDefault();
+
     if (selectedAvatar) {
       setIsConfirmed(true);
       // Here you could save to localStorage or context
-      localStorage.setItem('selectedAvatar', selectedAvatar.toString());
-      localStorage.setItem('avatarColor', selectedColor);
+      // localStorage.setItem('selectedAvatar', selectedAvatar.toString());
+      // localStorage.setItem('avatarColor', selectedColor);
+      try {
+        const res = await fetch("/api/setAvatar", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selectedAvatar, selectedColor }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          console.log("Avatar set");
+        }
+      } catch (err) {
+        console.error(err);
+
+      }
     }
   };
 
@@ -71,9 +88,8 @@ export default function Page3() {
             {avatarOptions.map((avatar) => (
               <button
                 key={avatar.id}
-                className={`${styles.avatarCard} ${
-                  selectedAvatar === avatar.id ? styles.selected : ''
-                }`}
+                className={`${styles.avatarCard} ${selectedAvatar === avatar.id ? styles.selected : ''
+                  }`}
                 onClick={() => handleAvatarSelect(avatar.id)}
               >
                 <div
@@ -103,9 +119,8 @@ export default function Page3() {
                 {colorOptions.map((color) => (
                   <button
                     key={color}
-                    className={`${styles.colorOption} ${
-                      selectedColor === color ? styles.colorSelected : ''
-                    }`}
+                    className={`${styles.colorOption} ${selectedColor === color ? styles.colorSelected : ''
+                      }`}
                     style={{
                       backgroundColor: color,
                       boxShadow: selectedColor === color
@@ -144,7 +159,7 @@ export default function Page3() {
 
       {/* Navigation */}
       <div className={styles.navBar}>
-        <Link href="/page2" className={styles.navButton}>
+        <Link href="/page1" className={styles.navButton}>
           ← Back
         </Link>
         {isConfirmed && (

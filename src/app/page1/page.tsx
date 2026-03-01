@@ -8,15 +8,15 @@ export default function Page1() {
   return (
     <div className={styles.container}>
       <Scene1 />
-      
+
       {/* Title at the top */}
       <div className={styles.overlay}>
         <h1 className={styles.title}>Qualcomm ASD Platform</h1>
       </div>
-      
+
       {/* Enter button at the bottom */}
       <div className={styles.enterButtonContainer}>
-        <Link href="/page2" className={styles.enterButton}>
+        <Link href="/signup" className={styles.enterButton}>
           Enter
         </Link>
       </div>

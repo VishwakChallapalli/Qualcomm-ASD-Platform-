@@ -3,13 +3,18 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import User from "./models/User.js";
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
 
-// need to change to only acceptable source later
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // connect to MongoDB
 mongoose
@@ -34,6 +39,19 @@ app.post("/signup", async (req, res) => {
         const newUser = new User({ accountName, email, password });
         await newUser.save();
 
+        const token = jwt.sign(
+            { accountName: accountName, email: email },
+            process.env.JWT_SECRET,
+            { expiresIn: "60 min" }
+        )
+
+        res.cookie("accessToken", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            maxAge: 60 * 60 * 1000
+        });
+
         res.status(201).json({ message: "User created successfully!" });
     } catch (error) {
         console.error(error);
@@ -52,10 +70,69 @@ app.post("/login", async (req, res) => {
             return res.status(400).json({ message: "Incorrect password" });
         }
 
+        const token = jwt.sign(
+            { accountName: user.accountName, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "60 min" }
+        )
+
+        res.cookie("accessToken", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            maxAge: 60 * 60 * 1000
+        });
+
         res.json({ message: "Login successful", accountName: user.accountName });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Server error" });
+    }
+});
+
+app.get("/me", async (req, res) => {
+    const token = req.cookies.accessToken
+    if (!token) {
+        return res.status(401).json({ message: "Not logged in" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        const accountName = req.user.accountName;
+        const user = await User.findOne({ accountName });
+        res.json(user);
+    } catch {
+        return res.status(401).json({ message: "Invalid token" });
+    }
+
+});
+
+app.put("/setAvatar", async (req, res) => {
+    const token = req.cookies.accessToken;
+
+    if (!token) {
+        return res.status(401).json({ message: "Not logged in" })
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded
+        const accountName = req.user.accountName;
+        const user = await User.findOne({ accountName });
+        const { selectedAvatar, selectedColor } = req.body;
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" })
+        }
+
+        user.avatarId = selectedAvatar;
+        user.avatarColor = selectedColor;
+        await user.save();
+        res.json({ message: "Avatar Set", user });
+
+    } catch {
+        return res.status(401).json({ message: "Invalid token" })
     }
 });
 

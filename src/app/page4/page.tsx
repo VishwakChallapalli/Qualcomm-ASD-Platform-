@@ -22,14 +22,26 @@ export default function Page4() {
 
   useEffect(() => {
     // Load selected avatar from localStorage
-    const savedAvatar = localStorage.getItem('selectedAvatar');
-    const savedColor = localStorage.getItem('avatarColor');
-    if (savedAvatar) {
-      setSelectedAvatar(parseInt(savedAvatar));
+    async function getAvatar() {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      const savedAvatar = data.avatarId;
+      const savedColor = data.avatarColor;
+      if (savedAvatar) {
+        setSelectedAvatar(savedAvatar);
+      }
+      else {
+        setSelectedAvatar(1);
+      }
+      if (savedColor) {
+        setAvatarColor(savedColor);
+      }
+      else {
+        setAvatarColor('#4a90e2');
+      }
     }
-    if (savedColor) {
-      setAvatarColor(savedColor);
-    }
+
+    getAvatar();
   }, []);
 
   useEffect(() => {
@@ -50,7 +62,7 @@ export default function Page4() {
     };
   }, [showExploreDropdown]);
 
-  const selectedAvatarData = selectedAvatar 
+  const selectedAvatarData = selectedAvatar
     ? avatarOptions.find(a => a.id === selectedAvatar)
     : null;
 
@@ -68,7 +80,7 @@ export default function Page4() {
       <div className={styles.topHeader}>
         <div className={styles.headerLeft}>
           <div className={styles.exploreDropdown}>
-            <button 
+            <button
               className={styles.exploreButton}
               onClick={() => setShowExploreDropdown(!showExploreDropdown)}
             >
@@ -78,8 +90,8 @@ export default function Page4() {
               <div className={styles.dropdownMenu}>
                 <div className={styles.dropdownSection}>
                   <h4 className={styles.dropdownSectionTitle}>Games</h4>
-                  <Link 
-                    href="/games" 
+                  <Link
+                    href="/games"
                     className={styles.dropdownItem}
                     onClick={() => setShowExploreDropdown(false)}
                   >
@@ -100,9 +112,9 @@ export default function Page4() {
           </div>
           <div className={styles.searchContainer}>
             <span className={styles.searchIcon}>🔍</span>
-            <input 
-              type="text" 
-              placeholder="Search" 
+            <input
+              type="text"
+              placeholder="Search"
               className={styles.searchInput}
             />
           </div>
@@ -201,8 +213,8 @@ export default function Page4() {
               {courseList.map((course, index) => {
                 const courseSlug = course.toLowerCase().replace(/\s+/g, '-');
                 return (
-                  <Link 
-                    key={index} 
+                  <Link
+                    key={index}
                     href={`/tests/${courseSlug}`}
                     className={styles.courseItem}
                   >
