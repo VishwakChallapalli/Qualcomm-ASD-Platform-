@@ -7,6 +7,16 @@ import styles from '@/styles/tic-tac-toe.module.css';
 type Player = 'X' | 'O' | null;
 type Board = Player[];
 
+// Helper: fire-and-forget progress update (keepalive so it survives navigation)
+function updateProgress(payload: Record<string, unknown>) {
+  fetch('/api/updateProgress', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export default function TicTacToePage() {
   const [board, setBoard] = useState<Board>(Array(9).fill(null));
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
@@ -17,25 +27,36 @@ export default function TicTacToePage() {
   const sessionStartRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    const savedScores = localStorage.getItem('ticTacToeScores');
-    if (savedScores) {
-      setScores(JSON.parse(savedScores));
-    }
+    // Load cumulative scores from DB
+    fetch('/api/progress')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ticTacToe) {
+          setScores({
+            player:   data.ticTacToe.wins         || 0,
+            computer: data.ticTacToe.computerWins  || 0,
+            ties:     data.ticTacToe.ties          || 0,
+          });
+        }
+      })
+      .catch(() => {});
+
     sessionStartRef.current = Date.now();
-    // Save time on unmount
+
+    // Save elapsed time to DB on unmount
     return () => {
       const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
-      const prev = parseInt(localStorage.getItem('ticTacToeTimePlayed') || '0', 10);
-      localStorage.setItem('ticTacToeTimePlayed', String(prev + elapsed));
+      if (elapsed > 0) {
+        updateProgress({ game: 'ticTacToe', addTimePlayed: elapsed });
+      }
     };
   }, []);
 
-
   const checkWinner = (squares: Board): Player | 'Tie' | null => {
     const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-      [0, 4, 8], [2, 4, 6] // diagonals
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6],
     ];
 
     for (const [a, b, c] of lines) {
@@ -44,65 +65,42 @@ export default function TicTacToePage() {
       }
     }
 
-    if (squares.every(square => square !== null)) {
-      return 'Tie';
-    }
-
+    if (squares.every((square) => square !== null)) return 'Tie';
     return null;
   };
 
   const findBestMove = (squares: Board): number => {
-    // 1. Check if computer can win
     for (let i = 0; i < 9; i++) {
       if (!squares[i]) {
-        const testBoard = [...squares];
-        testBoard[i] = 'O';
-        if (checkWinner(testBoard) === 'O') {
-          return i;
-        }
+        const test = [...squares]; test[i] = 'O';
+        if (checkWinner(test) === 'O') return i;
       }
     }
-
-    // 2. Block player from winning
     for (let i = 0; i < 9; i++) {
       if (!squares[i]) {
-        const testBoard = [...squares];
-        testBoard[i] = 'X';
-        if (checkWinner(testBoard) === 'X') {
-          return i;
-        }
+        const test = [...squares]; test[i] = 'X';
+        if (checkWinner(test) === 'X') return i;
       }
     }
-
-    // 3. Take center if available
     if (!squares[4]) return 4;
-
-    // 4. Take corners
-    const corners = [0, 2, 6, 8];
-    const availableCorners = corners.filter(i => !squares[i]);
-    if (availableCorners.length > 0) {
-      return availableCorners[Math.floor(Math.random() * availableCorners.length)];
-    }
-
-    // 5. Take any available space
-    const available = squares.map((square, index) => !square ? index : null).filter((i): i is number => i !== null);
+    const corners = [0, 2, 6, 8].filter((i) => !squares[i]);
+    if (corners.length > 0) return corners[Math.floor(Math.random() * corners.length)];
+    const available = squares.map((s, i) => (!s ? i : null)).filter((i): i is number => i !== null);
     return available[Math.floor(Math.random() * available.length)];
   };
 
   const updateScores = (gameWinner: Player | 'Tie') => {
-    setScores((currentScores) => {
-      let newScores = { ...currentScores };
+    setScores((cur) => {
       if (gameWinner === 'X') {
-        newScores = { ...currentScores, player: currentScores.player + 1 };
-        const prevWins = parseInt(localStorage.getItem('ticTacToeWins') || '0', 10);
-        localStorage.setItem('ticTacToeWins', String(prevWins + 1));
+        updateProgress({ game: 'ticTacToe', addWins: 1 });
+        return { ...cur, player: cur.player + 1 };
       } else if (gameWinner === 'O') {
-        newScores = { ...currentScores, computer: currentScores.computer + 1 };
+        updateProgress({ game: 'ticTacToe', addComputerWins: 1 });
+        return { ...cur, computer: cur.computer + 1 };
       } else {
-        newScores = { ...currentScores, ties: currentScores.ties + 1 };
+        updateProgress({ game: 'ticTacToe', addTies: 1 });
+        return { ...cur, ties: cur.ties + 1 };
       }
-      localStorage.setItem('ticTacToeScores', JSON.stringify(newScores));
-      return newScores;
     });
   };
 
@@ -142,14 +140,8 @@ export default function TicTacToePage() {
     } else {
       setIsPlayerTurn(false);
       setIsComputerThinking(true);
-
-      // Computer's move after a short delay
-      if (computerTurnTimerRef.current) {
-        clearTimeout(computerTurnTimerRef.current);
-      }
-      computerTurnTimerRef.current = setTimeout(() => {
-        runComputerTurn(newBoard);
-      }, 150);
+      if (computerTurnTimerRef.current) clearTimeout(computerTurnTimerRef.current);
+      computerTurnTimerRef.current = setTimeout(() => runComputerTurn(newBoard), 150);
     }
   };
 
@@ -166,23 +158,20 @@ export default function TicTacToePage() {
 
   useEffect(() => {
     return () => {
-      if (computerTurnTimerRef.current) {
-        clearTimeout(computerTurnTimerRef.current);
-      }
+      if (computerTurnTimerRef.current) clearTimeout(computerTurnTimerRef.current);
     };
   }, []);
 
   const resetScores = () => {
     setScores({ player: 0, computer: 0, ties: 0 });
-    localStorage.removeItem('ticTacToeScores');
   };
 
   const getStatusMessage = () => {
-    if (isComputerThinking) return "Computer is thinking...";
+    if (isComputerThinking) return 'Computer is thinking...';
     if (winner === 'Tie') return "It's a Tie!";
-    if (winner === 'X') return "You Win! 🎉";
-    if (winner === 'O') return "Computer Wins! 😔";
-    return "Your Turn";
+    if (winner === 'X') return 'You Win! 🎉';
+    if (winner === 'O') return 'Computer Wins! 😔';
+    return 'Your Turn';
   };
 
   return (

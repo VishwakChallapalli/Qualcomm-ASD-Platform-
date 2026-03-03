@@ -6,6 +6,15 @@ import styles from '@/styles/math-game.module.css';
 
 type Operation = '+' | '-' | '*' | '/';
 
+function updateProgress(payload: Record<string, unknown>) {
+  fetch('/api/updateProgress', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export default function MathGamePage() {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
@@ -18,16 +27,27 @@ export default function MathGamePage() {
 
   useEffect(() => {
     generateQuestion();
-    const savedScore = localStorage.getItem('mathGameScore');
-    const savedLevel = localStorage.getItem('mathGameLevel');
-    if (savedScore) setScore(parseInt(savedScore));
-    if (savedLevel) setLevel(parseInt(savedLevel));
+
+    // Load saved score & level from DB
+    fetch('/api/progress')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.mathGame) {
+          if (data.mathGame.score) setScore(data.mathGame.score);
+          if (data.mathGame.level) setLevel(data.mathGame.level);
+        }
+      })
+      .catch(() => {});
+
     sessionStartRef.current = Date.now();
+
     return () => {
       const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
-      const prev = parseInt(localStorage.getItem('mathGameTimePlayed') || '0', 10);
-      localStorage.setItem('mathGameTimePlayed', String(prev + elapsed));
+      if (elapsed > 0) {
+        updateProgress({ game: 'mathGame', addTimePlayed: elapsed });
+      }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -37,6 +57,7 @@ export default function MathGamePage() {
     } else {
       handleTimeUp();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
   const generateQuestion = () => {
@@ -58,20 +79,15 @@ export default function MathGamePage() {
     }
 
     switch (operation) {
-      case '+':
-        answer = num1 + num2;
-        break;
-      case '-':
-        answer = num1 - num2;
-        break;
-      case '*':
-        answer = num1 * num2;
-        break;
+      case '+': answer = num1 + num2; break;
+      case '-': answer = num1 - num2; break;
+      case '*': answer = num1 * num2; break;
       case '/':
         num2 = Math.floor(Math.random() * 10) + 1;
         num1 = num2 * (Math.floor(Math.random() * 10) + 1);
         answer = num1 / num2;
         break;
+      default: answer = 0;
     }
 
     setQuestion({ num1, num2, operation, answer });
@@ -82,17 +98,22 @@ export default function MathGamePage() {
   const handleSubmit = () => {
     const answer = parseFloat(userAnswer);
     if (answer === question.answer) {
-      setFeedback('Correct! 🎉');
-      setScore(score + 10);
-      setStreak(streak + 1);
-      if (streak >= 5 && level < 3) {
-        setLevel(level + 1);
+      const newScore = score + 10;
+      const newStreak = streak + 1;
+      let newLevel = level;
+      if (newStreak >= 5 && level < 3) {
+        newLevel = level + 1;
         setStreak(0);
+      } else {
+        setStreak(newStreak);
       }
-      localStorage.setItem('mathGameScore', String(score + 10));
-      localStorage.setItem('mathGameLevel', String(level));
-      const prevWins = parseInt(localStorage.getItem('mathGameWins') || '0', 10);
-      localStorage.setItem('mathGameWins', String(prevWins + 1));
+      setScore(newScore);
+      setLevel(newLevel);
+      setFeedback('Correct! 🎉');
+
+      // Save to DB
+      updateProgress({ game: 'mathGame', addWins: 1, setScore: newScore, setLevel: newLevel });
+
       setTimeout(() => {
         generateQuestion();
         setTimeLeft(30);
@@ -108,7 +129,7 @@ export default function MathGamePage() {
   };
 
   const handleTimeUp = () => {
-    setFeedback('Time\'s up! Starting new question...');
+    setFeedback("Time's up! Starting new question...");
     setTimeout(() => {
       generateQuestion();
       setTimeLeft(30);
@@ -120,8 +141,6 @@ export default function MathGamePage() {
     setLevel(1);
     setStreak(0);
     setTimeLeft(30);
-    localStorage.removeItem('mathGameScore');
-    localStorage.removeItem('mathGameLevel');
     generateQuestion();
   };
 

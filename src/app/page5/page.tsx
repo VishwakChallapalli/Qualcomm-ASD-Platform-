@@ -41,35 +41,45 @@ export default function Page5() {
   const [mirrorEmotions, setMirrorEmotions] = useState<GameStats>({ timePlayed: 0, wins: 0, score: 0 });
 
   useEffect(() => {
-    // Load user info from API
-    async function getUserInfo() {
-      const res = await fetch('/api/me');
-      const data = await res.json();
-      if (data.avatarId) setSelectedAvatar(data.avatarId);
-      if (data.avatarColor) setAvatarColor(data.avatarColor);
-      if (data.accountName) setUserName(data.accountName);
+    async function loadAllData() {
+      // Load user info
+      const meRes = await fetch('/api/me').catch(() => null);
+      if (meRes?.ok) {
+        const me = await meRes.json();
+        if (me.avatarId)    setSelectedAvatar(me.avatarId);
+        if (me.avatarColor) setAvatarColor(me.avatarColor);
+        if (me.accountName) setUserName(me.accountName);
+      }
+
+      // Load game progress from DB
+      const progRes = await fetch('/api/progress').catch(() => null);
+      if (progRes?.ok) {
+        const prog = await progRes.json();
+
+        if (prog.ticTacToe) {
+          setTicTacToe({
+            timePlayed: prog.ticTacToe.timePlayed || 0,
+            wins:       prog.ticTacToe.wins       || 0,
+            score:      prog.ticTacToe.wins        || 0, // use wins as "games won" score
+          });
+        }
+        if (prog.mathGame) {
+          setMathGame({
+            timePlayed: prog.mathGame.timePlayed || 0,
+            wins:       prog.mathGame.wins       || 0,
+            score:      prog.mathGame.score      || 0,
+          });
+        }
+        if (prog.mirrorEmotions) {
+          setMirrorEmotions({
+            timePlayed: prog.mirrorEmotions.timePlayed || 0,
+            wins:       prog.mirrorEmotions.wins       || 0,
+            score:      prog.mirrorEmotions.score      || 0,
+          });
+        }
+      }
     }
-    getUserInfo();
-
-    // Load game stats from localStorage
-    const tttScores = JSON.parse(localStorage.getItem('ticTacToeScores') || '{"player":0}');
-    setTicTacToe({
-      timePlayed: parseInt(localStorage.getItem('ticTacToeTimePlayed') || '0', 10),
-      wins: parseInt(localStorage.getItem('ticTacToeWins') || '0', 10),
-      score: tttScores.player || 0,
-    });
-
-    setMathGame({
-      timePlayed: parseInt(localStorage.getItem('mathGameTimePlayed') || '0', 10),
-      wins: parseInt(localStorage.getItem('mathGameWins') || '0', 10),
-      score: parseInt(localStorage.getItem('mathGameScore') || '0', 10),
-    });
-
-    setMirrorEmotions({
-      timePlayed: parseInt(localStorage.getItem('mirrorEmotionsTimePlayed') || '0', 10),
-      wins: parseInt(localStorage.getItem('mirrorEmotionsWins') || '0', 10),
-      score: parseInt(localStorage.getItem('mirrorEmotionsScore') || '0', 10),
-    });
+    loadAllData();
   }, []);
 
   useEffect(() => {
@@ -104,7 +114,7 @@ export default function Page5() {
       stats: ticTacToe,
       winLabel: 'Games Won',
       scoreLabel: 'Total Rounds',
-      scoreValue: (ticTacToe.score + (JSON.parse(localStorage?.getItem('ticTacToeScores') || '{"ties":0}').ties || 0)),
+      scoreValue: ticTacToe.wins,
     },
     {
       key: 'math-game',

@@ -5,13 +5,22 @@ import Link from 'next/link';
 import styles from '@/styles/mirror-emotions.module.css';
 
 const emotions = [
-  { name: 'Happy', emoji: '😊', color: '#ffd700' },
-  { name: 'Sad', emoji: '😢', color: '#4a90e2' },
-  { name: 'Angry', emoji: '😠', color: '#ff4444' },
+  { name: 'Happy',     emoji: '😊', color: '#ffd700' },
+  { name: 'Sad',       emoji: '😢', color: '#4a90e2' },
+  { name: 'Angry',     emoji: '😠', color: '#ff4444' },
   { name: 'Surprised', emoji: '😮', color: '#ff8c42' },
-  { name: 'Calm', emoji: '😌', color: '#98fb98' },
-  { name: 'Excited', emoji: '🤩', color: '#ff6b9d' },
+  { name: 'Calm',      emoji: '😌', color: '#98fb98' },
+  { name: 'Excited',   emoji: '🤩', color: '#ff6b9d' },
 ];
+
+function updateProgress(payload: Record<string, unknown>) {
+  fetch('/api/updateProgress', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 export default function MirrorEmotionsPage() {
   const [targetEmotion, setTargetEmotion] = useState<typeof emotions[0] | null>(null);
@@ -24,14 +33,24 @@ export default function MirrorEmotionsPage() {
 
   useEffect(() => {
     startNewRound();
-    const savedScore = localStorage.getItem('mirrorEmotionsScore');
-    if (savedScore) setScore(parseInt(savedScore));
+
+    // Load saved score from DB
+    fetch('/api/progress')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.mirrorEmotions?.score) setScore(data.mirrorEmotions.score);
+      })
+      .catch(() => {});
+
     sessionStartRef.current = Date.now();
+
     return () => {
       const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
-      const prev = parseInt(localStorage.getItem('mirrorEmotionsTimePlayed') || '0', 10);
-      localStorage.setItem('mirrorEmotionsTimePlayed', String(prev + elapsed));
+      if (elapsed > 0) {
+        updateProgress({ game: 'mirrorEmotions', addTimePlayed: elapsed });
+      }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startNewRound = () => {
@@ -47,11 +66,13 @@ export default function MirrorEmotionsPage() {
     setSelectedEmotion(emotionName);
 
     if (emotionName === targetEmotion.name) {
+      const newScore = score + 10;
+      setScore(newScore);
       setFeedback('Correct! Great job! 🎉');
-      setScore(score + 10);
-      localStorage.setItem('mirrorEmotionsScore', String(score + 10));
-      const prevWins = parseInt(localStorage.getItem('mirrorEmotionsWins') || '0', 10);
-      localStorage.setItem('mirrorEmotionsWins', String(prevWins + 1));
+
+      // Save to DB
+      updateProgress({ game: 'mirrorEmotions', addWins: 1, setScore: newScore });
+
       setTimeout(() => {
         setRound(round + 1);
         startNewRound();
@@ -70,7 +91,6 @@ export default function MirrorEmotionsPage() {
     setRound(1);
     setSelectedEmotion(null);
     setFeedback(null);
-    localStorage.removeItem('mirrorEmotionsScore');
     startNewRound();
   };
 
@@ -119,10 +139,7 @@ export default function MirrorEmotionsPage() {
         <div className={styles.targetSection}>
           <h2 className={styles.sectionTitle}>Match This Emotion:</h2>
           {targetEmotion && (
-            <div
-              className={styles.targetEmotion}
-              style={{ borderColor: targetEmotion.color }}
-            >
+            <div className={styles.targetEmotion} style={{ borderColor: targetEmotion.color }}>
               <span className={styles.targetEmoji}>{targetEmotion.emoji}</span>
               <span className={styles.targetName}>{targetEmotion.name}</span>
             </div>
@@ -135,16 +152,12 @@ export default function MirrorEmotionsPage() {
             {emotions.map((emotion) => (
               <button
                 key={emotion.name}
-                className={`${styles.emotionButton} ${selectedEmotion === emotion.name ? styles.selected : ''
-                  } ${selectedEmotion && emotion.name === targetEmotion?.name ? styles.correct : ''
-                  }`}
+                className={`${styles.emotionButton} ${selectedEmotion === emotion.name ? styles.selected : ''} ${selectedEmotion && emotion.name === targetEmotion?.name ? styles.correct : ''}`}
                 onClick={() => handleEmotionSelect(emotion.name)}
                 disabled={!!selectedEmotion}
                 style={{
                   borderColor: emotion.color,
-                  backgroundColor: selectedEmotion === emotion.name
-                    ? `${emotion.color}20`
-                    : 'transparent'
+                  backgroundColor: selectedEmotion === emotion.name ? `${emotion.color}20` : 'transparent',
                 }}
               >
                 <span className={styles.emotionEmoji}>{emotion.emoji}</span>
@@ -155,8 +168,7 @@ export default function MirrorEmotionsPage() {
         </div>
 
         {feedback && (
-          <div className={`${styles.feedback} ${feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong
-            }`}>
+          <div className={`${styles.feedback} ${feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong}`}>
             {feedback}
           </div>
         )}

@@ -196,5 +196,52 @@ app.put("/updateProfile", async (req, res) => {
     }
 });
 
+// ── Game Progress ──────────────────────────────────────────────────────────────
+
+app.get("/progress", async (req, res) => {
+    const token = req.cookies.accessToken;
+    if (!token) return res.status(401).json({ message: "Not logged in" });
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findOne({ accountName: decoded.accountName });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json(user.gameProgress || {});
+    } catch {
+        return res.status(401).json({ message: "Invalid token" });
+    }
+});
+
+// Accepts: { game, addTimePlayed?, addWins?, setScore?, addComputerWins?, addTies?, setLevel? }
+app.put("/updateProgress", async (req, res) => {
+    const token = req.cookies.accessToken;
+    if (!token) return res.status(401).json({ message: "Not logged in" });
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findOne({ accountName: decoded.accountName });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const { game, addTimePlayed, addWins, setScore, addComputerWins, addTies, setLevel } = req.body;
+
+        if (!user.gameProgress) user.gameProgress = {};
+        if (!user.gameProgress[game]) user.gameProgress[game] = {};
+
+        const g = user.gameProgress[game];
+
+        if (addTimePlayed) g.timePlayed = (g.timePlayed || 0) + addTimePlayed;
+        if (addWins)       g.wins       = (g.wins || 0)       + addWins;
+        if (addComputerWins) g.computerWins = (g.computerWins || 0) + addComputerWins;
+        if (addTies)       g.ties       = (g.ties || 0)       + addTies;
+        if (setScore !== undefined && setScore > (g.score || 0)) g.score = setScore;
+        if (setLevel !== undefined && setLevel > (g.level || 1)) g.level = setLevel;
+
+        user.markModified("gameProgress");
+        await user.save();
+
+        res.json({ message: "Progress updated", gameProgress: user.gameProgress });
+    } catch {
+        return res.status(401).json({ message: "Invalid token" });
+    }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
