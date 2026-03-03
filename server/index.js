@@ -136,6 +136,15 @@ app.put("/setAvatar", async (req, res) => {
     }
 });
 
+app.post("/logout", (req, res) => {
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+    });
+    res.json({ message: "Logged out" });
+});
+
 app.put("/updateProfile", async (req, res) => {
     const token = req.cookies.accessToken;
     if (!token) {

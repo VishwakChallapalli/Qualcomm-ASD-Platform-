@@ -14,12 +14,20 @@ export default function TicTacToePage() {
   const [scores, setScores] = useState({ player: 0, computer: 0, ties: 0 });
   const [isComputerThinking, setIsComputerThinking] = useState(false);
   const computerTurnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionStartRef = useRef<number>(Date.now());
 
   useEffect(() => {
     const savedScores = localStorage.getItem('ticTacToeScores');
     if (savedScores) {
       setScores(JSON.parse(savedScores));
     }
+    sessionStartRef.current = Date.now();
+    // Save time on unmount
+    return () => {
+      const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+      const prev = parseInt(localStorage.getItem('ticTacToeTimePlayed') || '0', 10);
+      localStorage.setItem('ticTacToeTimePlayed', String(prev + elapsed));
+    };
   }, []);
 
 
@@ -86,6 +94,8 @@ export default function TicTacToePage() {
       let newScores = { ...currentScores };
       if (gameWinner === 'X') {
         newScores = { ...currentScores, player: currentScores.player + 1 };
+        const prevWins = parseInt(localStorage.getItem('ticTacToeWins') || '0', 10);
+        localStorage.setItem('ticTacToeWins', String(prevWins + 1));
       } else if (gameWinner === 'O') {
         newScores = { ...currentScores, computer: currentScores.computer + 1 };
       } else {

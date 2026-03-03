@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/mirror-emotions.module.css';
 
@@ -20,11 +20,18 @@ export default function MirrorEmotionsPage() {
   const [round, setRound] = useState(1);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
+  const sessionStartRef = useRef<number>(Date.now());
 
   useEffect(() => {
     startNewRound();
     const savedScore = localStorage.getItem('mirrorEmotionsScore');
     if (savedScore) setScore(parseInt(savedScore));
+    sessionStartRef.current = Date.now();
+    return () => {
+      const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+      const prev = parseInt(localStorage.getItem('mirrorEmotionsTimePlayed') || '0', 10);
+      localStorage.setItem('mirrorEmotionsTimePlayed', String(prev + elapsed));
+    };
   }, []);
 
   const startNewRound = () => {
@@ -43,6 +50,8 @@ export default function MirrorEmotionsPage() {
       setFeedback('Correct! Great job! 🎉');
       setScore(score + 10);
       localStorage.setItem('mirrorEmotionsScore', String(score + 10));
+      const prevWins = parseInt(localStorage.getItem('mirrorEmotionsWins') || '0', 10);
+      localStorage.setItem('mirrorEmotionsWins', String(prevWins + 1));
       setTimeout(() => {
         setRound(round + 1);
         startNewRound();
@@ -91,7 +100,7 @@ export default function MirrorEmotionsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <Link href="/games" className={styles.backButton}>← Back to Games</Link>
+        <Link href="/page4" className={styles.backButton}>← Back</Link>
         <h1 className={styles.title}>Mirror Emotions</h1>
       </div>
 

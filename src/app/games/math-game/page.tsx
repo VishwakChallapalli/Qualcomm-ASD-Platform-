@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/math-game.module.css';
 
@@ -14,6 +14,7 @@ export default function MathGamePage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
+  const sessionStartRef = useRef<number>(Date.now());
 
   useEffect(() => {
     generateQuestion();
@@ -21,6 +22,12 @@ export default function MathGamePage() {
     const savedLevel = localStorage.getItem('mathGameLevel');
     if (savedScore) setScore(parseInt(savedScore));
     if (savedLevel) setLevel(parseInt(savedLevel));
+    sessionStartRef.current = Date.now();
+    return () => {
+      const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+      const prev = parseInt(localStorage.getItem('mathGameTimePlayed') || '0', 10);
+      localStorage.setItem('mathGameTimePlayed', String(prev + elapsed));
+    };
   }, []);
 
   useEffect(() => {
@@ -84,6 +91,8 @@ export default function MathGamePage() {
       }
       localStorage.setItem('mathGameScore', String(score + 10));
       localStorage.setItem('mathGameLevel', String(level));
+      const prevWins = parseInt(localStorage.getItem('mathGameWins') || '0', 10);
+      localStorage.setItem('mathGameWins', String(prevWins + 1));
       setTimeout(() => {
         generateQuestion();
         setTimeLeft(30);

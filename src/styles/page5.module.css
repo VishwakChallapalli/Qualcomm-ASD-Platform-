@@ -1,14 +1,16 @@
+/* ── Base ─────────────────────────────────────────── */
 .container {
   width: 100%;
   min-height: 100vh;
   background: #f4f7fb;
-  font-family: var(--font-geist-sans, 'Inter'), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-geist-sans, 'Inter'), system-ui, sans-serif;
   color: #1f2933;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
 }
 
+/* ── Top Header ──────────────────────────────────── */
 .topHeader {
   background: #ffffff;
   border-bottom: 1px solid #e4e9f2;
@@ -45,7 +47,6 @@
 
 .exploreButton:hover {
   background: #f1f4f9;
-  border-color: #c2cbe0;
 }
 
 .dropdownMenu {
@@ -56,17 +57,13 @@
   border: 1px solid #e4e9f2;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 220px;
+  min-width: 200px;
   z-index: 1000;
   overflow: hidden;
 }
 
 .dropdownSection {
   padding: 0.5rem 0;
-}
-
-.dropdownSection:not(:last-child) {
-  border-bottom: 1px solid #f0f0f0;
 }
 
 .dropdownSectionTitle {
@@ -86,7 +83,6 @@
   text-decoration: none;
   font-size: 0.9rem;
   transition: background 0.2s ease;
-  cursor: pointer;
 }
 
 .dropdownItem:hover {
@@ -101,7 +97,7 @@
   border: 1px solid #d3dae6;
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  min-width: 280px;
+  min-width: 260px;
 }
 
 .searchIcon {
@@ -128,7 +124,7 @@
   color: #00bcd4;
   font-weight: 600;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .backLink:hover {
@@ -141,32 +137,32 @@
   gap: 0.5rem;
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
-  background: rgba(0, 188, 212, 0.1);
+  background: rgba(0, 188, 212, 0.08);
 }
 
 .userAvatarSmall {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  color: #ffffff;
+  font-size: 1.1rem;
 }
 
 .userAvatarEmoji {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .userName {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #1f2937;
 }
 
+/* ── Banner ──────────────────────────────────────── */
 .banner {
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2.5rem 2rem;
   display: flex;
   align-items: center;
@@ -179,315 +175,252 @@
   max-width: 620px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .bannerTitle {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
   margin: 0;
 }
 
 .bannerSubtitle {
   margin: 0;
-  font-size: 1.05rem;
-  opacity: 0.92;
+  font-size: 1rem;
+  opacity: 0.9;
   line-height: 1.6;
 }
 
 .bannerBadge {
-  width: 84px;
-  height: 84px;
+  width: 80px;
+  height: 80px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.75rem;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+  font-size: 2.5rem;
+  flex-shrink: 0;
 }
 
-.contentLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
-  gap: 1.75rem;
-  padding: 2rem;
+/* ── Summary Row ─────────────────────────────────── */
+.summaryRow {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.75rem 2rem 0 2rem;
 }
 
-.leaderboardSection,
-.achievementsSection {
+.summaryCard {
+  flex: 1;
   background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
-  padding: 1.75rem;
+  border: 1px solid #e4e9f2;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.summaryIcon {
+  font-size: 2rem;
+}
+
+.summaryValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1;
+}
+
+.summaryLabel {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0.2rem 0 0;
+  font-weight: 500;
+}
+
+/* ── Games Section ───────────────────────────────── */
+.gamesSection {
+  padding: 1.75rem 2rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .sectionTitle {
-  margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #1f2937;
+  margin: 0;
 }
 
-.leaderboardHeader {
+.gameCards {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-.toggleGroup {
-  display: inline-flex;
-  background: #f1f4f9;
-  border-radius: 999px;
-  padding: 0.25rem;
-  gap: 0.35rem;
-}
-
-.toggleButton {
-  padding: 0.45rem 1.1rem;
-  border-radius: 999px;
-  border: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #64748b;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggleButton:hover {
-  color: #1f2937;
-}
-
-.toggleButton.active {
+.gameCard {
   background: #ffffff;
-  color: #1f2937;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-}
-
-.leaderboardList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  border: 1px solid #e4e9f2;
+  border-top: 4px solid;
+  border-radius: 14px;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.leaderRow {
-  display: grid;
-  grid-template-columns: 40px 48px 1fr;
-  align-items: center;
-  background: #f9fbff;
-  border: 1px solid #e4e9f2;
-  border-radius: 14px;
-  padding: 0.65rem 0.75rem;
-  gap: 0.75rem;
+  gap: 1.25rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.leaderRow:hover {
+.gameCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
 }
 
-.leaderFirst {
-  border: 2px solid rgba(255, 215, 0, 0.6);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 243, 204, 0.6));
-}
-
-.leaderRank {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1f2937;
-  text-align: center;
-}
-
-.leaderAvatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #e0f2ff;
+.gameCardHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-}
-
-.leaderInfo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.leaderName {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.leaderPoints {
-  font-weight: 600;
-  color: #2563eb;
-}
-
-.calloutCard {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(16, 185, 129, 0.12));
-  border-radius: 14px;
-  padding: 1.25rem;
-  border: 1px solid rgba(124, 58, 237, 0.2);
-}
-
-.calloutTitle {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #4338ca;
-}
-
-.calloutText {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #374151;
-  line-height: 1.6;
-}
-
-.achievementList {
-  display: flex;
-  flex-direction: column;
   gap: 1rem;
 }
 
-.achievementCard {
-  display: flex;
-  gap: 1rem;
-  padding: 1.1rem 1.25rem;
-  border-radius: 16px;
-  background: #f9fbff;
-  border: 1px solid #e4e9f2;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.achievementCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
-}
-
-.achievementIcon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(255, 215, 0, 0.2);
+.gameIconCircle {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  flex-shrink: 0;
 }
 
-.achievementDetails {
+.gameCardTitle {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
-.achievementHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.achievementName {
-  margin: 0;
+.gameName {
   font-size: 1.1rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.achievementPercent {
   font-weight: 700;
-  color: #0ea5e9;
-}
-
-.achievementDescription {
+  color: #1f2937;
   margin: 0;
-  font-size: 0.95rem;
-  color: #4b5563;
 }
 
-.progressTrack {
-  display: grid;
-  grid-template-columns: 40px 1fr 45px;
+.notPlayedBadge {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.playLink {
+  padding: 0.45rem 1.1rem;
+  border: 2px solid;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.playLink:hover {
+  opacity: 0.8;
+  transform: scale(1.04);
+}
+
+/* ── Stat Blocks ─────────────────────────────────── */
+.gameStats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #f9fbff;
+  border: 1px solid #e4e9f2;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.statBlock {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.statDivider {
+  width: 1px;
+  height: 48px;
+  background: #e4e9f2;
+  flex-shrink: 0;
+}
+
+.statIcon {
+  font-size: 1.5rem;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0.2rem 0 0;
+  font-weight: 500;
+}
+
+/* ── Time Bar ────────────────────────────────────── */
+.timeBarWrapper {
+  display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.progressLabel {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.progressBar {
-  height: 10px;
-  background: #e2e8f0;
+.timeBarTrack {
+  flex: 1;
+  height: 8px;
+  background: #e4e9f2;
   border-radius: 999px;
   overflow: hidden;
 }
 
-.progressFill {
+.timeBarFill {
   height: 100%;
-  background: linear-gradient(135deg, #00d4ff, #38bdf8);
   border-radius: 999px;
-  transition: width 0.4s ease;
+  transition: width 0.5s ease;
+  min-width: 4px;
 }
 
-.motivationCard {
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: rgba(14, 165, 233, 0.12);
-  border: 1px solid rgba(14, 165, 233, 0.3);
-  border-radius: 16px;
-  padding: 1.25rem;
+.timeBarPct {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  font-weight: 500;
 }
 
-.motivationIcon {
-  font-size: 2rem;
-}
-
-.motivationTitle {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #0369a1;
-}
-
-.motivationText {
-  margin: 0.25rem 0 0;
-  font-size: 0.95rem;
-  color: #0f172a;
-  line-height: 1.6;
-}
-
-@media (max-width: 1100px) {
-  .contentLayout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 720px) {
-  .topHeader {
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .summaryRow {
     flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
   }
 
-  .headerRight {
-    justify-content: space-between;
+  .gameStats {
+    flex-direction: column;
+  }
+
+  .statDivider {
+    width: 100%;
+    height: 1px;
   }
 
   .banner {
@@ -495,7 +428,9 @@
     align-items: flex-start;
   }
 
-  .bannerBadge {
-    align-self: center;
+  .topHeader {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
   }
 }

@@ -163,6 +163,24 @@
   font-weight: 500;
 }
 
+.logoutButton {
+  padding: 0.4rem 1rem;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #e53e3e;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: #e53e3e;
+  color: #fff;
+  border-color: #e53e3e;
+}
+
 /* Streak and Level Bar */
 .streakBar {
   background: #fff;

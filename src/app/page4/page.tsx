@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '@/styles/page4.module.css';
 import EmotionMonitor from '@/components/EmotionMonitor';
@@ -65,6 +66,7 @@ const gamesList = [
 ];
 
 export default function Page4() {
+  const router = useRouter();
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
   const [showExploreDropdown, setShowExploreDropdown] = useState(false);
@@ -119,6 +121,11 @@ export default function Page4() {
     setEditAvatar(avatarId);
     const avatar = avatarOptions.find(a => a.id === avatarId);
     if (avatar) setEditColor(avatar.baseColor);
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    router.push('/page1');
   };
 
   const handleSaveProfile = async () => {
@@ -178,22 +185,9 @@ export default function Page4() {
             {showExploreDropdown && (
               <div className={styles.dropdownMenu}>
                 <div className={styles.dropdownSection}>
-                  <h4 className={styles.dropdownSectionTitle}>Games</h4>
-                  <Link
-                    href="/games"
-                    className={styles.dropdownItem}
-                    onClick={() => setShowExploreDropdown(false)}
-                  >
-                    🎮 All Games
-                  </Link>
-                </div>
-                <div className={styles.dropdownSection}>
                   <h4 className={styles.dropdownSectionTitle}>Learning</h4>
-                  <Link href="/page4" className={styles.dropdownItem} onClick={() => setShowExploreDropdown(false)}>
-                    📚 Courses
-                  </Link>
                   <Link href="/page5" className={styles.dropdownItem} onClick={() => setShowExploreDropdown(false)}>
-                    🏆 Achievements
+                    📈 Progress
                   </Link>
                 </div>
               </div>
@@ -221,6 +215,9 @@ export default function Page4() {
             )}
             <span className={styles.userName}>{userName}</span>
           </div>
+          <button className={styles.logoutButton} onClick={handleLogout}>
+            Log Out
+          </button>
         </div>
       </div>
 
@@ -269,7 +266,7 @@ export default function Page4() {
             </div>
             <div className={styles.navSection}>
               <h4 className={styles.navSectionTitle}>MY ACCOUNT</h4>
-              <Link href="#" className={styles.navLink}>Progress</Link>
+              <Link href="/page5" className={styles.navLink}>Progress</Link>
               <button className={styles.navLink} onClick={openEditProfile} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Profile</button>
               <Link href="#" className={styles.navLink}>Settings</Link>
             </div>
