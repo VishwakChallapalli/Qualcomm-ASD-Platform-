@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/page4.module.css';
 import EmotionMonitor from '@/components/EmotionMonitor';
+import GamesPage from '../games/page';
 
 // Avatar options to match what was selected
 const avatarOptions = [
@@ -15,14 +16,53 @@ const avatarOptions = [
   { id: 6, name: 'Morgan', baseColor: '#9b59b6', emoji: '🎨' },
 ];
 
+const gamesList = [
+  {
+    id: 1,
+    name: 'Math Game',
+    description: 'Practice math skills with fun interactive challenges',
+    icon: '🔢',
+    color: '#4a90e2',
+  },
+  {
+    id: 2,
+    name: 'Tic Tac Toe',
+    description: 'Classic strategy game to challenge your thinking',
+    icon: '⭕',
+    color: '#ff6b9d',
+  },
+  {
+    id: 3,
+    name: 'Mirror Emotions',
+    description: 'Practice matching emotions with your expressions',
+    icon: '🪞',
+    color: '#98fb98',
+  },
+  {
+    id: 4,
+    name: 'Color Patterns',
+    description: 'Predict the next few colors!',
+    icon: '🟥🟦',
+    color: '#8845f5',
+  },
+  {
+    id: 5,
+    name: 'What Would You Do?', //SCENARIO SELECTION GAME
+    description: 'Choose the best option',
+    icon: '🗣️',
+    color: '#45f2f5',
+  },
+];
+
 export default function Page4() {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
   const [showExploreDropdown, setShowExploreDropdown] = useState(false);
+  const [userName, setUserName] = useState<string>("User Name");
 
   useEffect(() => {
     // Load selected avatar from localStorage
-    async function getAvatar() {
+    async function getUserInfo() {
       const res = await fetch("/api/me");
       const data = await res.json();
       const savedAvatar = data.avatarId;
@@ -39,9 +79,11 @@ export default function Page4() {
       else {
         setAvatarColor('#4a90e2');
       }
+      const currentUserName = data.accountName;
+      setUserName(currentUserName);
     }
 
-    getAvatar();
+    getUserInfo();
   }, []);
 
   useEffect(() => {
@@ -160,10 +202,7 @@ export default function Page4() {
                 <span className={styles.userAvatarLargeEmoji}>👤</span>
               </div>
             )}
-            <h3 className={styles.profileName}>User Name</h3>
-            <p className={styles.profileBio}>
-              Pick a username - <Link href="#" className={styles.bioLink}>Add your bio</Link>
-            </p>
+            <h3 className={styles.profileName}>{userName}</h3>
             <button className={styles.editProfileButton}>Edit Profile</button>
             <div className={styles.badgesRow}>
               <div className={styles.badge}>🏆</div>
@@ -190,7 +229,7 @@ export default function Page4() {
 
         {/* Main Content Area */}
         <div className={styles.mainContent}>
-          <div className={styles.contentHeader}>
+          {/* <div className={styles.contentHeader}>
             <h1 className={styles.contentTitle}>My courses</h1>
             <div className={styles.headerActions}>
               <Link href="/admin" className={styles.adminLink}>
@@ -201,15 +240,69 @@ export default function Page4() {
               </Link>
               <button className={styles.editCoursesButton}>Edit Courses</button>
             </div>
-          </div>
-
+          </div> */}
           <div className={styles.courseSection}>
-            <div className={styles.courseSectionHeader}>
+            {/* <div className={styles.courseSectionHeader}>
               <h2 className={styles.courseSubtitle}>Learning Journey</h2>
-              <Link href="#" className={styles.seeAllLink}>See all (7)</Link>
+            </div> */}
+            <div className={styles.pageHeader}>
+              <h1 className={styles.pageTitle}>Games</h1>
+              <p className={styles.pageSubtitle}>Fun and engaging games to learn and practice</p>
             </div>
-
-            <div className={styles.courseList}>
+            {/* Games Grid */}
+            <div className={styles.gamesContainer}>
+              <div className={styles.gamesGrid}>
+                {gamesList.map((game) => (
+                  <div key={game.id} className={styles.gameCard}>
+                    <div className={styles.gameIcon} style={{ backgroundColor: `${game.color}20`, color: game.color }}>
+                      <span className={styles.gameIconEmoji}>{game.icon}</span>
+                    </div>
+                    <div className={styles.gameContent}>
+                      <h3 className={styles.gameName}>{game.name}</h3>
+                      <p className={styles.gameDescription}>{game.description}</p>
+                      {game.id === 1 ? (
+                        <Link
+                          href="/games/math-game"
+                          className={styles.playButton}
+                          style={{ borderColor: game.color, color: game.color }}
+                        >
+                          Play →
+                        </Link>
+                      ) : game.id === 2 ? (
+                        <Link
+                          href="/games/tic-tac-toe"
+                          className={styles.playButton}
+                          style={{ borderColor: game.color, color: game.color }}
+                        >
+                          Play →
+                        </Link>
+                      ) : game.id === 3 ? (
+                        <Link
+                          href="/games/mirror-emotions"
+                          className={styles.playButton}
+                          style={{ borderColor: game.color, color: game.color }}
+                        >
+                          Play →
+                        </Link>
+                      ) : game.id === 4 ? (
+                        <Link
+                          href="/games/color-pattern-game"
+                          className={styles.playButton}
+                          style={{ borderColor: game.color, color: game.color }}
+                        >
+                          Play →
+                        </Link>
+                      ) : (
+                        <button className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>
+                          Play →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* <div className={styles.courseList}>
               {courseList.map((course, index) => {
                 const courseSlug = course.toLowerCase().replace(/\s+/g, '-');
                 return (
@@ -228,15 +321,15 @@ export default function Page4() {
                   </Link>
                 );
               })}
-            </div>
+            </div> */}
           </div>
 
-          <div className={styles.addCourseSection}>
+          {/* <div className={styles.addCourseSection}>
             <div className={styles.addCourseBox}>
               <span className={styles.addCourseIcon}>+</span>
             </div>
             <p className={styles.addCourseText}>Add another course</p>
-          </div>
+          </div> */}
         </div>
       </div>
       <EmotionMonitor />

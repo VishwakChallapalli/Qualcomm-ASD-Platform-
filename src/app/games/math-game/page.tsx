@@ -34,7 +34,7 @@ export default function MathGamePage() {
 
   const generateQuestion = () => {
     let num1: number, num2: number, operation: Operation, answer: number;
-    
+
     if (level === 1) {
       operation = Math.random() > 0.5 ? '+' : '-';
       num1 = Math.floor(Math.random() * 20) + 1;
@@ -128,7 +128,7 @@ export default function MathGamePage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <Link href="/games" className={styles.backButton}>← Back to Games</Link>
+        <Link href="/page4" className={styles.backButton}>← Back to Games</Link>
         <h1 className={styles.title}>Math Game</h1>
       </div>
 

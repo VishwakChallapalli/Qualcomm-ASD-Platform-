@@ -1,3 +1,6 @@
+
+//UNUSED FILE, INTEGRATED INTO PAGE 4
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -55,7 +58,7 @@ export default function GamesPage() {
     }
   }, []);
 
-  const selectedAvatarData = selectedAvatar 
+  const selectedAvatarData = selectedAvatar
     ? avatarOptions.find(a => a.id === selectedAvatar)
     : null;
 
@@ -100,25 +103,25 @@ export default function GamesPage() {
                 <h3 className={styles.gameName}>{game.name}</h3>
                 <p className={styles.gameDescription}>{game.description}</p>
                 {game.id === 1 ? (
-                  <Link 
-                    href="/games/math-game" 
-                    className={styles.playButton} 
+                  <Link
+                    href="/games/math-game"
+                    className={styles.playButton}
                     style={{ borderColor: game.color, color: game.color }}
                   >
                     Play →
                   </Link>
                 ) : game.id === 2 ? (
-                  <Link 
-                    href="/games/tic-tac-toe" 
-                    className={styles.playButton} 
+                  <Link
+                    href="/games/tic-tac-toe"
+                    className={styles.playButton}
                     style={{ borderColor: game.color, color: game.color }}
                   >
                     Play →
                   </Link>
                 ) : game.id === 3 ? (
-                  <Link 
-                    href="/games/mirror-emotions" 
-                    className={styles.playButton} 
+                  <Link
+                    href="/games/mirror-emotions"
+                    className={styles.playButton}
                     style={{ borderColor: game.color, color: game.color }}
                   >
                     Play →

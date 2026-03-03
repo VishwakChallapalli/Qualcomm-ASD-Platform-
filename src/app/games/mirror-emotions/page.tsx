@@ -36,9 +36,9 @@ export default function MirrorEmotionsPage() {
 
   const handleEmotionSelect = (emotionName: string) => {
     if (!targetEmotion) return;
-    
+
     setSelectedEmotion(emotionName);
-    
+
     if (emotionName === targetEmotion.name) {
       setFeedback('Correct! Great job! 🎉');
       setScore(score + 10);
@@ -69,7 +69,7 @@ export default function MirrorEmotionsPage() {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <Link href="/games" className={styles.backButton}>← Back to Games</Link>
+          <Link href="/page4" className={styles.backButton}>← Back to Games</Link>
           <h1 className={styles.title}>Mirror Emotions</h1>
         </div>
         <div className={styles.instructionsCard}>
@@ -110,7 +110,7 @@ export default function MirrorEmotionsPage() {
         <div className={styles.targetSection}>
           <h2 className={styles.sectionTitle}>Match This Emotion:</h2>
           {targetEmotion && (
-            <div 
+            <div
               className={styles.targetEmotion}
               style={{ borderColor: targetEmotion.color }}
             >
@@ -126,17 +126,15 @@ export default function MirrorEmotionsPage() {
             {emotions.map((emotion) => (
               <button
                 key={emotion.name}
-                className={`${styles.emotionButton} ${
-                  selectedEmotion === emotion.name ? styles.selected : ''
-                } ${
-                  selectedEmotion && emotion.name === targetEmotion?.name ? styles.correct : ''
-                }`}
+                className={`${styles.emotionButton} ${selectedEmotion === emotion.name ? styles.selected : ''
+                  } ${selectedEmotion && emotion.name === targetEmotion?.name ? styles.correct : ''
+                  }`}
                 onClick={() => handleEmotionSelect(emotion.name)}
                 disabled={!!selectedEmotion}
                 style={{
                   borderColor: emotion.color,
-                  backgroundColor: selectedEmotion === emotion.name 
-                    ? `${emotion.color}20` 
+                  backgroundColor: selectedEmotion === emotion.name
+                    ? `${emotion.color}20`
                     : 'transparent'
                 }}
               >
@@ -148,9 +146,8 @@ export default function MirrorEmotionsPage() {
         </div>
 
         {feedback && (
-          <div className={`${styles.feedback} ${
-            feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong
-          }`}>
+          <div className={`${styles.feedback} ${feedback.includes('Correct') ? styles.feedbackCorrect : styles.feedbackWrong
+            }`}>
             {feedback}
           </div>
         )}

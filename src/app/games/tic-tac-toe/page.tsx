@@ -178,7 +178,7 @@ export default function TicTacToePage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <Link href="/games" className={styles.backButton}>← Back to Games</Link>
+        <Link href="/page4" className={styles.backButton}>← Back to Games</Link>
         <h1 className={styles.title}>Tic Tac Toe</h1>
       </div>
 
