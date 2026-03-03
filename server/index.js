@@ -136,5 +136,56 @@ app.put("/setAvatar", async (req, res) => {
     }
 });
 
+app.put("/updateProfile", async (req, res) => {
+    const token = req.cookies.accessToken;
+    if (!token) {
+        return res.status(401).json({ message: "Not logged in" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const currentAccountName = decoded.accountName;
+        const user = await User.findOne({ accountName: currentAccountName });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const { accountName, avatarId, avatarColor } = req.body;
+
+        // Check if new username is taken by someone else
+        if (accountName && accountName !== currentAccountName) {
+            const existing = await User.findOne({ accountName });
+            if (existing) {
+                return res.status(400).json({ message: "That username is already taken" });
+            }
+            user.accountName = accountName;
+        }
+
+        if (avatarId !== undefined) user.avatarId = avatarId;
+        if (avatarColor !== undefined) user.avatarColor = avatarColor;
+
+        await user.save();
+
+        // Reissue token with updated accountName
+        const newToken = jwt.sign(
+            { accountName: user.accountName, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "60 min" }
+        );
+
+        res.cookie("accessToken", newToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            maxAge: 60 * 60 * 1000
+        });
+
+        res.json({ message: "Profile updated", user });
+    } catch {
+        return res.status(401).json({ message: "Invalid token" });
+    }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -700,3 +700,250 @@
   margin: 0;
   opacity: 0.9;
 }
+
+/* ── Edit Profile Modal ─────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.modalClose:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Preview */
+.editPreview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: #f7f7f7;
+  border-radius: 12px;
+}
+
+.editPreviewAvatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255,255,255,0.8);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  transition: background-color 0.3s;
+}
+
+.editPreviewEmoji {
+  font-size: 2.5rem;
+}
+
+.editPreviewName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* Fields */
+.editField {
+  margin-bottom: 1.5rem;
+}
+
+.editLabel {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.6rem;
+}
+
+.editInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.editInput:focus {
+  border-color: #00d4ff;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+}
+
+/* Avatar grid inside modal */
+.editAvatarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.editAvatarCard {
+  background: #f7f7f7;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.editAvatarCard:hover {
+  border-color: #00d4ff;
+  background: #f0fbff;
+}
+
+.editAvatarCard.editAvatarSelected {
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+}
+
+.editAvatarCircle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+
+.editAvatarEmoji {
+  font-size: 1.75rem;
+}
+
+.editAvatarName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  margin: 0;
+}
+
+/* Color grid inside modal */
+.editColorGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.editColorDot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.6);
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.editColorDot:hover {
+  transform: scale(1.12);
+}
+
+.editColorDot.editColorSelected {
+  border: 3px solid #333;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* Error */
+.saveError {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+  padding: 0.5rem 0.75rem;
+  background: #fff5f5;
+  border-radius: 6px;
+  border-left: 3px solid #e53e3e;
+}
+
+/* Save button */
+.saveButton {
+  width: 100%;
+  padding: 0.875rem;
+  border: none;
+  background: #00d4ff;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #00b8d4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.35);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveButton.saveButtonDone {
+  background: #38a169;
+}
