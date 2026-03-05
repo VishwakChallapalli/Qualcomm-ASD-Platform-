@@ -15,8 +15,12 @@ try:
     import cv2
     import numpy as np
     from deepface import DeepFace
+    import mediapipe as mp
+    import torch
+    from transformers import AutoImageProcessor, AutoModelForImageClassification
+    from PIL import Image
     FULL_MODEL = True
-    print("✓ OpenCV + DeepFace loaded")
+    print("✓ OpenCV, DeepFace, MediaPipe & ViT loaded")
 except ImportError as e:
     FULL_MODEL = False
     print(f"⚠ Lite mode (missing deps): {e}")
@@ -34,8 +38,34 @@ state = {
     "last_updated":       None,
     "emotion_history":    [],
     "error":              None,
+    "model_name":         "standard", # standard (deepface) vs enhanced (vit)
 }
 state_lock = threading.Lock()
+
+# ── Superior Model Initialization ─────────────────────────────────────────────
+vit_model_name = "dima806/facial_emotions_image_detection"
+vit_processor = None
+vit_model = None
+
+if FULL_MODEL:
+    try:
+        print(f"Loading ViT model: {vit_model_name}...")
+        vit_processor = AutoImageProcessor.from_pretrained(vit_model_name)
+        vit_model = AutoModelForImageClassification.from_pretrained(vit_model_name)
+        vit_model.eval()
+        print("✓ ViT model loaded")
+    except Exception as e:
+        print(f"⚠ Failed to load ViT: {e}")
+
+# MediaPipe helper
+mp_face_detection = None
+if FULL_MODEL:
+    try:
+        import mediapipe.solutions.face_detection as mp_solutions
+        mp_face_detection = mp_solutions.FaceDetection(model_selection=0, min_detection_confidence=0.5)
+        print("✓ MediaPipe Solutions loaded")
+    except Exception as e:
+        print(f"⚠ MediaPipe Solutions unavailable (falling back to OpenCV): {e}")
 
 # ── Tracker ───────────────────────────────────────────────────────────────────
 class TrackerThread(threading.Thread):
@@ -47,28 +77,56 @@ class TrackerThread(threading.Thread):
         self.emotion_interval    = 1.0   # seconds between DeepFace calls
         self.emotion_running     = False
 
-    # ── Async DeepFace call so camera loop stays at ~20 fps ──────────────────
-    def _run_deepface(self, face_crop):
+    # ── Inference call (DeepFace or ViT) ──────────────────────────────────────
+    def _run_inference(self, face_crop):
         try:
-            results = DeepFace.analyze(
-                face_crop,
-                actions=["emotion"],
-                enforce_detection=False,
-                silent=True
-            )
-            if results:
-                dom  = results[0]["dominant_emotion"]
-                conf = float(results[0]["emotion"].get(dom, 0.0))  # cast numpy float32 → Python float
-                self.current_emotion = dom
-                with state_lock:
-                    state["emotion"]            = dom
-                    state["emotion_confidence"] = round(conf, 2)
-                    entry = {"time": time.strftime("%H:%M:%S"), "emotion": dom}
-                    state["emotion_history"].append(entry)
-                    if len(state["emotion_history"]) > 20:
-                        state["emotion_history"].pop(0)
-        except Exception:
-            pass
+            with state_lock:
+                current_model = state["model_name"]
+            
+            dom = "neutral"
+            conf = 0.0
+
+            if current_model == "standard":
+                # Standard DeepFace CNN
+                results = DeepFace.analyze(
+                    face_crop,
+                    actions=["emotion"],
+                    enforce_detection=False,
+                    silent=True
+                )
+                if results:
+                    dom  = results[0]["dominant_emotion"]
+                    conf = float(results[0]["emotion"].get(dom, 0.0))
+            else:
+                # Superior ViT Model
+                if vit_model and vit_processor:
+                    # Convert BGR to RGB
+                    img_rgb = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
+                    pil_img = Image.fromarray(img_rgb)
+                    
+                    inputs = vit_processor(images=pil_img, return_tensors="pt")
+                    with torch.no_grad():
+                        outputs = vit_model(**inputs)
+                    
+                    logits = outputs.logits
+                    probs = torch.nn.functional.softmax(logits, dim=-1)
+                    pred_idx = torch.argmax(probs, dim=-1).item()
+                    
+                    # Labels for dima806 model: ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+                    labels = vit_model.config.id2label
+                    dom = labels[pred_idx]
+                    conf = float(probs[0][pred_idx] * 100)
+
+            with state_lock:
+                state["emotion"]            = dom
+                state["emotion_confidence"] = round(conf, 2)
+                entry = {"time": time.strftime("%H:%M:%S"), "emotion": dom}
+                state["emotion_history"].append(entry)
+                if len(state["emotion_history"]) > 20:
+                    state["emotion_history"].pop(0)
+
+        except Exception as e:
+            print(f"Inference error: {e}")
         finally:
             self.emotion_running = False
 
@@ -87,7 +145,7 @@ class TrackerThread(threading.Thread):
             return
 
         self.emotion_running = True
-        t = threading.Thread(target=self._run_deepface, args=(crop,), daemon=True)
+        t = threading.Thread(target=self._run_inference, args=(crop,), daemon=True)
         t.start()
 
     # ── Lite simulation ───────────────────────────────────────────────────────
@@ -141,14 +199,31 @@ class TrackerThread(threading.Thread):
                     time.sleep(0.05)
                     continue
 
-                gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = face_detector.detectMultiScale(gray, 1.1, 5, minSize=(80, 80))
+                with state_lock:
+                    current_model = state["model_name"]
 
-                face_detected = len(faces) > 0
+                face_detected = False
+                x, y, w, h = 0, 0, 0, 0
+
+                if current_model == "enhanced" and mp_face_detection:
+                    # Use MediaPipe Detection
+                    img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    mp_results = mp_face_detection.process(img_rgb)
+                    if mp_results.detections:
+                        face_detected = True
+                        # Get first detection
+                        bbox = mp_results.detections[0].location_data.relative_bounding_box
+                        h_f, w_f, _ = frame.shape
+                        x, y, w, h = int(bbox.xmin * w_f), int(bbox.ymin * h_f), int(bbox.width * w_f), int(bbox.height * h_f)
+                else:
+                    # Use OpenCV Cascade
+                    gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    faces = face_detector.detectMultiScale(gray, 1.1, 5, minSize=(80, 80))
+                    face_detected = len(faces) > 0
+                    if face_detected:
+                        x, y, w, h = max(faces, key=lambda r: r[2] * r[3])
 
                 if face_detected:
-                    # Use the largest face
-                    x, y, w, h = max(faces, key=lambda r: r[2] * r[3])
                     self._trigger_emotion(frame, x, y, w, h)
                 else:
                     self.current_emotion = "neutral"
@@ -180,6 +255,7 @@ def status():
             "ok":      True,
             "running": state["running"],
             "mode":    "full" if FULL_MODEL else "lite",
+            "model":   state["model_name"],
         })
 
 
@@ -197,7 +273,22 @@ def get_emotion():
             "last_updated":       state["last_updated"],
             "emotion_history":    state["emotion_history"][-10:],
             "error":              state["error"],
+            "model_name":         state["model_name"],
         })
+
+
+@app.route("/set_model", methods=["POST"])
+def set_model():
+    from flask import request
+    req = request.json or {}
+    model = req.get("model", "standard")
+    if model not in ["standard", "enhanced"]:
+        return jsonify({"ok": False, "error": "invalid model"}), 400
+    
+    with state_lock:
+        state["model_name"] = model
+    
+    return jsonify({"ok": True, "model": model})
 
 
 @app.route("/start", methods=["POST"])

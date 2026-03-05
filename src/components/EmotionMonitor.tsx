@@ -15,36 +15,37 @@ interface EmotionData {
   last_updated: string | null;
   emotion_history: { time: string; emotion: string }[];
   error: string | null;
+  model_name?: string;
 }
 
 // ── Emotion → emoji map ───────────────────────────────────────────────────────
 const EMOTION_EMOJI: Record<string, string> = {
-  happy:     "😄",
-  sad:       "😢",
-  angry:     "😠",
-  surprise:  "😲",
+  happy: "😄",
+  sad: "😢",
+  angry: "😠",
+  surprise: "😲",
   surprised: "😲",
-  fear:      "😨",
-  disgust:   "🤢",
-  neutral:   "😐",
-  calm:      "😌",
-  confused:  "😕",
-  delight:   "😁",
-  joy:       "🤩",
+  fear: "😨",
+  disgust: "🤢",
+  neutral: "😐",
+  calm: "😌",
+  confused: "😕",
+  delight: "😁",
+  joy: "🤩",
 };
 
 const EMOTION_COLOR: Record<string, string> = {
-  happy:     "#4ade80",
-  delight:   "#4ade80",
-  joy:       "#4ade80",
-  sad:       "#60a5fa",
-  angry:     "#f87171",
-  surprise:  "#fbbf24",
+  happy: "#4ade80",
+  delight: "#4ade80",
+  joy: "#4ade80",
+  sad: "#60a5fa",
+  angry: "#f87171",
+  surprise: "#fbbf24",
   surprised: "#fbbf24",
-  fear:      "#c084fc",
-  disgust:   "#a3e635",
-  neutral:   "#94a3b8",
-  calm:      "#67e8f9",
+  fear: "#c084fc",
+  disgust: "#a3e635",
+  neutral: "#94a3b8",
+  calm: "#67e8f9",
 };
 
 const SERVER = "http://127.0.0.1:5050";
@@ -52,10 +53,10 @@ const POLL_MS = 2000;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function EmotionMonitor() {
-  const [data, setData]           = useState<EmotionData | null>(null);
-  const [serverUp, setServerUp]   = useState(false);
-  const [expanded, setExpanded]   = useState(false);
-  const [starting, setStarting]   = useState(false);
+  const [data, setData] = useState<EmotionData | null>(null);
+  const [serverUp, setServerUp] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   // Start tracker if not running
   const startTracker = useCallback(async () => {
@@ -65,6 +66,23 @@ export default function EmotionMonitor() {
     } catch (_) { /* server offline */ }
     setStarting(false);
   }, []);
+
+  const switchModel = async (model: "standard" | "enhanced") => {
+    try {
+      const res = await fetch(`${SERVER}/set_model`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model }),
+      });
+      if (res.ok) {
+        // Poll immediately to update local state
+        const pollRes = await fetch(`${SERVER}/emotion`);
+        if (pollRes.ok) setData(await pollRes.json());
+      }
+    } catch (e) {
+      console.error("Failed to switch model:", e);
+    }
+  };
 
   // Poll /emotion every POLL_MS
   useEffect(() => {
@@ -110,10 +128,10 @@ export default function EmotionMonitor() {
     );
   }
 
-  const emotion   = data?.emotion ?? "neutral";
-  const emoji     = EMOTION_EMOJI[emotion] ?? "😐";
-  const color     = EMOTION_COLOR[emotion] ?? "#94a3b8";
-  const looking   = data?.looking_at_screen ?? false;
+  const emotion = data?.emotion ?? "neutral";
+  const emoji = EMOTION_EMOJI[emotion] ?? "😐";
+  const color = EMOTION_COLOR[emotion] ?? "#94a3b8";
+  const looking = data?.looking_at_screen ?? false;
   const faceFound = data?.face_detected ?? false;
 
   return (
@@ -192,6 +210,23 @@ export default function EmotionMonitor() {
               </div>
             </div>
           )}
+
+          <div className={styles.modelSelector}>
+            <button
+              className={`${styles.modelBtn} ${data?.model_name === 'standard' ? styles.activeModel : ''}`}
+              onClick={() => switchModel('standard')}
+              title="Optimized for speed"
+            >
+              Standard
+            </button>
+            <button
+              className={`${styles.modelBtn} ${data?.model_name === 'enhanced' ? styles.activeModel : ''}`}
+              onClick={() => switchModel('enhanced')}
+              title="Optimized for accuracy"
+            >
+              Enhanced
+            </button>
+          </div>
 
           {data?.error === "lite_mode" && (
             <div className={styles.warning}>
