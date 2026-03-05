@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Eye Tracking and Emotion Detection for ASD Learning Tool
-Uses MediaPipe for face/eye detection and DeepFace for robust emotion recognition
+Integrated Tracker v2 - ASD Learning Tool
+Uses MediaPipe (gaze/blink) + DeepFace (emotion) + Session CSV Logging
+Press 'C' to calibrate | Press 'Q' to quit and save session report
 """
 
 import cv2
@@ -10,11 +11,34 @@ import numpy as np
 import mediapipe as mp
 from datetime import datetime
 import os
+import shutil
 import threading
-from deepface import DeepFace
+import csv
+import onnxruntime as ort
+from scipy.special import softmax
+import pickle
+
+SCREENSHOT_DIR  = "screenshots"
+SESSION_LOG_DIR = "session_logs"
+
+# FER+ ONNX emotion labels (Microsoft model order)
+FERPLUS_LABELS = [
+    "neutral", "happiness", "surprise", "sadness",
+    "anger", "disgust", "fear", "contempt"
+]
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "emotion_ferplus.onnx")
+
 
 class EmotionEyeTracker:
     def __init__(self):
+        # ── Clean up old screenshots and session logs on every restart ───────
+        for folder in [SCREENSHOT_DIR, SESSION_LOG_DIR]:
+            if os.path.exists(folder):
+                shutil.rmtree(folder)
+            os.makedirs(folder)
+        print("Cleared old screenshots and session logs.")
+
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
@@ -22,376 +46,599 @@ class EmotionEyeTracker:
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        
-        # Initialize DeepFace - run once to load model
-        print("Loading DeepFace emotion model... (this may take a moment)")
-        try:
-            # We run a dummy prediction to load the model into memory
-            dummy_img = np.zeros((48, 48, 3), dtype=np.uint8)
-            DeepFace.analyze(dummy_img, actions=['emotion'], enforce_detection=False, silent=True)
-            print("DeepFace model loaded successfully!")
-        except Exception as e:
-            print(f"Warning: DeepFace initialization info: {e}")
-        
-        # Cleanup old screenshots
-        if os.path.exists("screenshots"):
-            import shutil
-            shutil.rmtree("screenshots")
-        os.makedirs("screenshots", exist_ok=True)
-        
+
+        # FER+ ONNX model (Microsoft, trained on FER+ — much more accurate)
+        print("Loading FER+ emotion model (ONNX)...")
+        self.ort_session    = ort.InferenceSession(MODEL_PATH)
+        self.ort_input_name = self.ort_session.get_inputs()[0].name
+        print("FER+ model loaded OK.")
+
+        # Personal model (trained via train_personal_model.py)
+        personal_path = os.path.join(os.path.dirname(__file__), "personal_emotion_model.pkl")
+        self._personal_path  = personal_path
+        self._personal_mtime = 0.0
+        self.personal_clf    = None
+        self._load_personal_model()
+        self._start_personal_model_watcher()
+
+        # Session logging
+        self.session_start = datetime.now()
+        session_name = self.session_start.strftime("session_%Y%m%d_%H%M%S.csv")
+        self.session_file = os.path.join(SESSION_LOG_DIR, session_name)
+        self.session_log = []
+
+
+        # Blink state
         self.blink_counter = 0
         self.last_blink_time = 0
+
+        # Screenshot state
         self.last_screenshot_time = 0
-        self.screenshot_interval = 2.0
-        
-        # Calibration state
+        self.screenshot_interval = 3.0
+
+        # Calibration
         self.calibrated = False
-        self.calib_pitch = 0
-        self.calib_yaw = 0
-        self.calib_l_dist = 0
-        self.calib_r_dist = 0
+        self.calib_pitch = 0.0
+        self.calib_yaw = 0.0
         self.calib_ratio_l = 0.5
         self.calib_ratio_r = 0.5
-        
-        # Emotion detection control
-        self.current_emotion = "neutral"
-        self.last_emotion_time = 0
-        self.emotion_interval = 0.5  # Check emotion every 0.5 seconds
-        self.emotion_thread_running = False
-        
-    def calculate_eye_aspect_ratio(self, eye_landmarks, frame_w, frame_h):
-        def get_point(idx):
-            return np.array([eye_landmarks[idx].x * frame_w,
-                            eye_landmarks[idx].y * frame_h])
-        
-        points = [get_point(i) for i in range(6)]
-        
-        vertical_1 = np.linalg.norm(points[1] - points[5])
-        vertical_2 = np.linalg.norm(points[2] - points[4])
-        horizontal = np.linalg.norm(points[0] - points[3])
-        
-        if horizontal == 0:
-            return 0
-        
-        ear = (vertical_1 + vertical_2) / (2.0 * horizontal)
-        return ear
-    
-    def detect_emotion_deepface(self, frame_crop):
-        try:
-            # DeepFace expects RGB (or BGR depending on backend, but handle internally)
-            # OpenCV gives BGR, DeepFace handles it or we convert. DeepFace internally uses cv2 (BGR) usually or PIL (RGB)
-            # Safe bet is to pass BGR as is since we use cv2
-            results = DeepFace.analyze(frame_crop, actions=['emotion'], enforce_detection=False, silent=True)
-            if results:
-                # results is a list of dicts
-                return results[0]['dominant_emotion']
-        except Exception:
-            # print(f"Emotion error: {e}")
-            pass
-        return self.current_emotion
+        self.do_calibrate = False
 
-    def update_emotion_async(self, frame, face_box):
+        # Emotion state
+        self.current_emotion = "neutral"
+        self.emotion_confidence = 0.0
+        self.last_emotion_time = 0
+        self.emotion_interval = 0.5
+        self.emotion_thread_running = False
+
+        # Temporal smoothing — rolling window of raw probability dicts
+        self.emotion_history   = []   # list of {emotion: prob} dicts
+        self.HISTORY_LEN       = 7    # average over last 7 predictions
+        self.CONFIDENCE_THRESH = 45.0 # only accept predictions above this %
+
+        # CLAHE for preprocessing
+        self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+
+        # Per-emotion calibration bias (saved by calibrate_emotions.py)
+        bias_path = os.path.join(os.path.dirname(__file__), "emotion_bias.npy")
+        self._bias_path     = bias_path
+        self._bias_mtime    = 0.0
+        if os.path.exists(bias_path):
+            self.emotion_bias  = np.load(bias_path).astype(np.float32)
+            self._bias_mtime   = os.path.getmtime(bias_path)
+            print(f"Loaded calibration bias from {bias_path}")
+        else:
+            self.emotion_bias = np.zeros(8, dtype=np.float32)
+
+        # Watch bias file for live reload (so calibrate_emotions.py updates
+        # take effect immediately without restarting the tracker)
+        self._start_bias_watcher()
+
+        # Stats for display
+        self.looking_frames  = 0
+        self.total_frames    = 0
+        self.session_emotions = {}
+
+    # ── Live bias file watcher ─────────────────────────────────────────────────
+
+    def _start_bias_watcher(self):
+        """Background thread: reloads emotion_bias.npy whenever it changes.
+        Run calibrate_emotions.py in a second terminal; the tracker picks
+        up the new bias automatically within 1 second."""
+        def watch():
+            while True:
+                time.sleep(1.0)
+                if not os.path.exists(self._bias_path):
+                    continue
+                mtime = os.path.getmtime(self._bias_path)
+                if mtime != self._bias_mtime:
+                    try:
+                        new_bias = np.load(self._bias_path).astype(np.float32)
+                        self.emotion_bias  = new_bias
+                        self._bias_mtime   = mtime
+                        print("[Bias] Reloaded emotion_bias.npy — calibration updated.")
+                    except Exception:
+                        pass
+        threading.Thread(target=watch, daemon=True).start()
+
+    def _load_personal_model(self):
+        if not os.path.exists(self._personal_path):
+            return
+        try:
+            with open(self._personal_path, "rb") as f:
+                data = pickle.load(f)
+            self.personal_clf    = data["pipeline"]
+            self._personal_mtime = os.path.getmtime(self._personal_path)
+            print(f"[Personal] Loaded personal model — using fine-tuned classifier.")
+        except Exception as e:
+            print(f"[Personal] Could not load personal model: {e}")
+
+    def _start_personal_model_watcher(self):
+        """Reloads personal_emotion_model.pkl automatically if retrained."""
+        def watch():
+            while True:
+                time.sleep(1.5)
+                if not os.path.exists(self._personal_path):
+                    continue
+                mtime = os.path.getmtime(self._personal_path)
+                if mtime != self._personal_mtime:
+                    self._load_personal_model()
+        threading.Thread(target=watch, daemon=True).start()
+
+
+    # ── Eye Aspect Ratio ────────────────────────────────────────────────────
+
+    def calculate_ear(self, eye_lms, fw, fh):
+        def pt(i):
+            return np.array([eye_lms[i].x * fw, eye_lms[i].y * fh])
+        v1 = np.linalg.norm(pt(1) - pt(5))
+        v2 = np.linalg.norm(pt(2) - pt(4))
+        h  = np.linalg.norm(pt(0) - pt(3))
+        return (v1 + v2) / (2.0 * h) if h else 0
+
+    # ── Iris Position ───────────────────────────────────────────────────────
+
+    def get_iris_ratio(self, eye_lms, iris_lm, fw, fh):
+        p_in  = np.array([eye_lms[0].x * fw, eye_lms[0].y * fh])
+        p_out = np.array([eye_lms[3].x * fw, eye_lms[3].y * fh])
+        p_iris = np.array([iris_lm.x * fw,   iris_lm.y * fh])
+        v_eye  = p_out - p_in
+        denom  = np.dot(v_eye, v_eye)
+        if denom == 0:
+            return 0.5
+        return np.dot(p_iris - p_in, v_eye) / denom
+
+    # ── Head Pose ───────────────────────────────────────────────────────────
+
+    def calculate_head_pose(self, lms, fw, fh):
+        model_pts = np.array([
+            (0.0, 0.0, 0.0),
+            (0.0, -330.0, -65.0),
+            (-225.0, 170.0, -135.0),
+            (225.0, 170.0, -135.0),
+            (-150.0, -150.0, -125.0),
+            (150.0, -150.0, -125.0)
+        ])
+        img_pts = np.array([
+            (lms.landmark[1].x * fw,   lms.landmark[1].y * fh),
+            (lms.landmark[152].x * fw, lms.landmark[152].y * fh),
+            (lms.landmark[33].x * fw,  lms.landmark[33].y * fh),
+            (lms.landmark[263].x * fw, lms.landmark[263].y * fh),
+            (lms.landmark[61].x * fw,  lms.landmark[61].y * fh),
+            (lms.landmark[291].x * fw, lms.landmark[291].y * fh),
+        ], dtype="double")
+        cam_mat = np.array([[fw, 0, fw/2], [0, fw, fh/2], [0, 0, 1]], dtype="double")
+        dist    = np.zeros((4, 1))
+        ok, rvec, _ = cv2.solvePnP(model_pts, img_pts, cam_mat, dist, flags=cv2.SOLVEPNP_ITERATIVE)
+        if not ok:
+            return 0, 0, 0
+        rmat, _ = cv2.Rodrigues(rvec)
+        angles, *_ = cv2.RQDecomp3x3(rmat)
+        return angles[0], angles[1], angles[2]
+
+    # ── Face crop with alignment ─────────────────────────────────────────────
+
+    def get_aligned_face_crop(self, frame, face_landmarks, fw, fh):
+        """
+        Uses MediaPipe eye-corner landmarks to align and crop the face.
+        Rotating the face upright before emotion analysis improves accuracy.
+        """
+        # Eye corner landmarks: left eye outer=33, right eye outer=263
+        lc = face_landmarks.landmark[33]
+        rc = face_landmarks.landmark[263]
+        lx, ly = int(lc.x * fw), int(lc.y * fh)
+        rx, ry = int(rc.x * fw), int(rc.y * fh)
+
+        # Compute rotation angle to level eyes
+        dy = ry - ly
+        dx = rx - lx
+        angle = np.degrees(np.arctan2(dy, dx))
+
+        # Centre of face from bounding landmarks
+        xs = [int(lm.x * fw) for lm in face_landmarks.landmark]
+        ys = [int(lm.y * fh) for lm in face_landmarks.landmark]
+        cx = (min(xs) + max(xs)) // 2
+        cy = (min(ys) + max(ys)) // 2
+
+        # Rotate frame around face centre
+        M    = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+        rot  = cv2.warpAffine(frame, M, (fw, fh))
+
+        # Generous crop around the aligned face
+        fw_face = max(xs) - min(xs)
+        fh_face = max(ys) - min(ys)
+        pad_w   = int(fw_face * 0.25)
+        pad_h   = int(fh_face * 0.30)
+        x1 = max(0, min(xs) - pad_w)
+        y1 = max(0, min(ys) - pad_h)
+        x2 = min(fw, max(xs) + pad_w)
+        y2 = min(fh, max(ys) + pad_h)
+
+        crop = rot[y1:y2, x1:x2]
+        return crop
+
+    # ── Geometric sadness detector (landmark-based) ──────────────────────────
+
+    def compute_geometric_sad_score(self, face_landmarks, fw, fh):
+        """
+        Computes a 0-100 sadness likelihood from face geometry.
+        Cues: lip corner droop + inner brow raise.
+        Uses forehead (10) → chin (152) for a reliable face height.
+        """
+        lm = face_landmarks.landmark
+        def y(idx): return lm[idx].y * fh
+
+        # Reliable face height: forehead top (10) to chin (152)
+        face_h = abs(y(152) - y(10)) + 1e-6
+
+        # ── Lip corner droop ──────────────────────────────────────────────
+        # Lip vertical midpoint (upper=13, lower=14)
+        lip_mid_y     = (y(13) + y(14)) / 2.0
+        corner_avg_y  = (y(61) + y(291)) / 2.0
+        # Positive = corners below midpoint = frown
+        droop_norm    = (corner_avg_y - lip_mid_y) / face_h
+        droop_score   = float(np.clip(droop_norm * 1200, 0, 60))  # 0-60
+
+        # ── Inner brow raise ──────────────────────────────────────────────
+        inner_brow_y  = (y(107) + y(336)) / 2.0
+        outer_brow_y  = (y(46)  + y(276)) / 2.0
+        # Positive = inner brow above outer = raised inner brow = sad
+        brow_norm     = (outer_brow_y - inner_brow_y) / face_h
+        brow_score    = float(np.clip(brow_norm * 900, 0, 40))   # 0-40
+
+        return droop_score + brow_score  # 0-100
+
+    # ── CLAHE face preprocessing ─────────────────────────────────────────────
+
+    def preprocess_face(self, crop):
+        """
+        Apply CLAHE adaptive histogram equalisation per channel.
+        Improves emotion detection under varied lighting conditions.
+        """
+        if crop is None or crop.size == 0:
+            return crop
+        lab = cv2.cvtColor(crop, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        l_eq = self.clahe.apply(l)
+        lab_eq = cv2.merge([l_eq, a, b])
+        return cv2.cvtColor(lab_eq, cv2.COLOR_LAB2BGR)
+
+    # ── Temporal smoothing ───────────────────────────────────────────────────
+
+    def smooth_and_update_emotion(self, raw_scores: dict, geo_sad_score: float = 0.0):
+        """
+        Add the latest prediction to a rolling window and return the
+        average dominant emotion. Blends geometric sadness signal in.
+        """
+        if not raw_scores:
+            return
+
+        # Blend geometric sadness: if geometry strongly suggests sad,
+        # boost the sad score proportionally before gating
+        if geo_sad_score > 20:
+            boost = geo_sad_score * 0.5   # up to +50% additive boost
+            raw_scores = dict(raw_scores)
+            raw_scores["sadness"] = min(100.0, raw_scores.get("sadness", 0) + boost)
+            # Re-normalise slightly
+            total = sum(raw_scores.values())
+            raw_scores = {k: v / total * 100 for k, v in raw_scores.items()}
+
+        dom_emotion = max(raw_scores, key=raw_scores.get)
+        dom_score   = raw_scores[dom_emotion]
+
+        # Sadness gets a lower confidence gate since it's subtler
+        threshold = 28.0 if dom_emotion == "sadness" else self.CONFIDENCE_THRESH
+        if dom_score < threshold:
+            return
+
+        self.emotion_history.append(raw_scores)
+        if len(self.emotion_history) > self.HISTORY_LEN:
+            self.emotion_history.pop(0)
+
+        # Average probabilities across history window
+        all_keys = set(k for d in self.emotion_history for k in d)
+        avg = {k: np.mean([d.get(k, 0) for d in self.emotion_history])
+               for k in all_keys}
+
+        best_emo  = max(avg, key=avg.get)
+        best_conf = avg[best_emo]
+
+        self.current_emotion    = best_emo
+        self.emotion_confidence = best_conf
+        emo = best_emo
+        self.session_emotions[emo] = self.session_emotions.get(emo, 0) + 1
+
+    # ── FER+ ONNX emotion inference (async) ─────────────────────────────────
+
+    def run_ferplus(self, crop_bgr):
+        """
+        1. Runs the FER+ ONNX model to get raw 8-dim logit features.
+        2a. If a personal model is loaded (trained via train_personal_model.py),
+            uses its LogisticRegression predict_proba for the final label.
+        2b. Otherwise falls back to calibration bias + softmax.
+        Returns: dict of {emotion_label: probability_percent}
+        """
+        gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
+        gray = cv2.resize(gray, (64, 64))
+        inp  = gray.astype(np.float32)[np.newaxis, np.newaxis, :, :]
+        raw  = self.ort_session.run(None, {self.ort_input_name: inp})[0][0]  # (8,)
+
+        if self.personal_clf is not None:
+            # Personal model: LogisticRegression on top of raw logits
+            proba  = self.personal_clf.predict_proba([raw])[0]   # (n_classes,)
+            labels = self.personal_clf.classes_                   # class names
+            scores = {label: float(p * 100) for label, p in zip(labels, proba)}
+            # Fill any missing labels with 0
+            return {lbl: scores.get(lbl, 0.0) for lbl in FERPLUS_LABELS}
+        else:
+            # Fallback: calibration bias + softmax over FER+ logits
+            probs = softmax(raw + self.emotion_bias) * 100.0
+            return {FERPLUS_LABELS[i]: float(probs[i]) for i in range(len(FERPLUS_LABELS))}
+
+
+    def update_emotion_async(self, frame, face_landmarks, fw, fh, geo_sad_score=0.0):
         if self.emotion_thread_running:
             return
-            
         if time.time() - self.last_emotion_time < self.emotion_interval:
             return
 
-        def emotion_task():
+        def task():
             self.emotion_thread_running = True
             try:
-                x, y, w, h = face_box
-                # Add some padding
-                h_pad = int(h * 0.1)
-                w_pad = int(w * 0.1)
-                y1 = max(0, y - h_pad)
-                x1 = max(0, x - w_pad)
-                y2 = min(frame.shape[0], y + h + h_pad)
-                x2 = min(frame.shape[1], x + w + w_pad)
-                
-                face_crop = frame[y1:y2, x1:x2]
-                
-                if face_crop.size > 0:
-                     emotion = self.detect_emotion_deepface(face_crop)
-                     self.current_emotion = emotion
-                     self.last_emotion_time = time.time()
+                crop = self.get_aligned_face_crop(frame, face_landmarks, fw, fh)
+                if crop is None or crop.size == 0:
+                    return
+
+                # CLAHE preprocessing
+                crop = self.preprocess_face(crop)
+
+                # FER+ ONNX inference + geometry blend
+                raw_scores = self.run_ferplus(crop)
+                self.smooth_and_update_emotion(raw_scores, geo_sad_score)
+                self.last_emotion_time = time.time()
             except Exception:
                 pass
             finally:
                 self.emotion_thread_running = False
-        
-        thread = threading.Thread(target=emotion_task)
-        thread.daemon = True
-        thread.start()
-    
-    def save_screenshot(self, frame):
-        current_time = time.time()
-        if current_time - self.last_screenshot_time >= self.screenshot_interval:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"screenshots/capture_{timestamp}.jpg"
-            cv2.imwrite(filename, frame)
-            self.last_screenshot_time = current_time
-            print(f"Screenshot saved: {filename}")
-    
-    def get_iris_position(self, eye_landmarks, iris_center, frame_w, frame_h):
-        """
-        Calculates the horizontal ratio of the iris within the eye.
-        Returns: ratio (0.0=left, 0.5=center, 1.0=right)
-        """
-        # corners: 0=left(inner for left eye), 3=right(outer for left eye) 
-        # Note: landmark indices passed in are already mapped. 
-        # For left eye: 33(inner), 133(outer). For right eye: 362(inner), 263(outer)
-        # We need the specific indices from the subset.
-        
-        # Get absolute coordinates
-        p_inner = np.array([eye_landmarks[0].x * frame_w, eye_landmarks[0].y * frame_h]) # 0 is ind 33/362 
-        p_outer = np.array([eye_landmarks[3].x * frame_w, eye_landmarks[3].y * frame_h]) # 3 is ind 133/263
-        p_iris = np.array([iris_center.x * frame_w, iris_center.y * frame_h])
-        
-        # Eye width
-        eye_width = np.linalg.norm(p_outer - p_inner)
-        if eye_width == 0: return 0.5
-        
-        # Project iris on the line connecting corners
-        # Vector from inner to outer
-        v_eye = p_outer - p_inner
-        v_iris = p_iris - p_inner
-        
-        # Projection length
-        proj = np.dot(v_iris, v_eye) / np.dot(v_eye, v_eye)
-        # horizontal ratio (0=inner, 1=outer)
-        
-        return proj
 
-    def calculate_head_pose(self, face_landmarks, frame_w, frame_h):
-        # 3D model points
-        model_points = np.array([
-            (0.0, 0.0, 0.0),             # Nose tip
-            (0.0, -330.0, -65.0),        # Chin
-            (-225.0, 170.0, -135.0),     # Left eye left corner
-            (225.0, 170.0, -135.0),      # Right eye right corner
-            (-150.0, -150.0, -125.0),    # Left Mouth corner
-            (150.0, -150.0, -125.0)      # Right mouth corner
-        ])
-        
-        # Camera internals
-        focal_length = frame_w
-        center = (frame_w/2, frame_h/2)
-        camera_matrix = np.array(
-            [[focal_length, 0, center[0]],
-             [0, focal_length, center[1]],
-             [0, 0, 1]], dtype = "double"
-        )
-        dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
-        
-        # 2D image points
-        # indices: 1(nose), 152(chin), 226(L eye corner), 446(R eye corner), 57(L mouth), 287(R mouth)
-        # Using standard robust indices:
-        ids = [1, 9, 33, 263, 61, 291] # Adjusted for stability: 1=nose, 152->9(chin alt), 33=L_in, 263=R_in
-        # Re-mapping to standard model points correspondence:
-        # Nose(1), Chin(152), LeftEyeLeft(33 - wait, model needs LeftEyeLeftCorner... let's use 263/33 swapped or standard)
-        # Let's use simple set:
-        image_points = np.array([
-            (face_landmarks.landmark[1].x * frame_w, face_landmarks.landmark[1].y * frame_h),     # Nose tip
-            (face_landmarks.landmark[152].x * frame_w, face_landmarks.landmark[152].y * frame_h), # Chin
-            (face_landmarks.landmark[33].x * frame_w, face_landmarks.landmark[33].y * frame_h),   # Left eye left corner
-            (face_landmarks.landmark[263].x * frame_w, face_landmarks.landmark[263].y * frame_h), # Right eye right corner
-            (face_landmarks.landmark[61].x * frame_w, face_landmarks.landmark[61].y * frame_h),   # Left mouth
-            (face_landmarks.landmark[291].x * frame_w, face_landmarks.landmark[291].y * frame_h)  # Right mouth
-        ], dtype="double")
-        
-        (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
-        
-        # Get rotational angles
-        rmat, _ = cv2.Rodrigues(rotation_vector)
-        angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
-        
-        # angles: [pitch, yaw, roll]
-        pitch = angles[0]
-        yaw = angles[1]
-        roll = angles[2]
-        
-        return pitch, yaw, roll
+        threading.Thread(target=task, daemon=True).start()
+
+
+
+
+
+    # ── Session Logging ──────────────────────────────────────────────────────
+
+    def log_frame(self, timestamp, looking, emotion, blinks, pitch, yaw):
+        self.session_log.append({
+            "timestamp": timestamp,
+            "looking": looking,
+            "emotion": emotion,
+            "blinks": blinks,
+            "pitch": round(pitch, 1),
+            "yaw": round(yaw, 1),
+        })
+
+    def save_session_csv(self):
+        if not self.session_log:
+            return
+        with open(self.session_file, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.session_log[0].keys())
+            writer.writeheader()
+            writer.writerows(self.session_log)
+        print(f"\nSession saved to: {self.session_file}")
+
+    # ── Screenshot ────────────────────────────────────────────────────────────
+
+    def save_screenshot(self, frame):
+        if time.time() - self.last_screenshot_time >= self.screenshot_interval:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            cv2.imwrite(f"{SCREENSHOT_DIR}/capture_{ts}.jpg", frame)
+            self.last_screenshot_time = time.time()
+
+    # ── Drawing ──────────────────────────────────────────────────────────────
+
+    def draw_ui(self, frame, face_detected, eyes_open, looking, pitch, yaw):
+        h, w = frame.shape[:2]
+
+        # Top bar background
+        cv2.rectangle(frame, (0, 0), (w, 110), (15, 15, 15), -1)
+
+        # Face status
+        face_col = (0, 220, 100) if face_detected else (80, 80, 80)
+        cv2.putText(frame, f"FACE: {'DETECTED' if face_detected else 'NONE'}", (10, 28),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, face_col, 2)
+
+        # Eyes
+        eye_col = (0, 220, 100) if eyes_open else (50, 50, 200)
+        cv2.putText(frame, f"EYES: {'OPEN' if eyes_open else 'CLOSED'}", (200, 28),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, eye_col, 2)
+
+        # Blinks
+        cv2.putText(frame, f"BLINKS: {self.blink_counter}", (380, 28),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, (200, 200, 200), 2)
+
+        # Attention (Looking)
+        attn_col = (0, 255, 80) if looking else (0, 60, 255)
+        attn_txt = "LOOKING AT SCREEN" if looking else "NOT LOOKING"
+        cv2.putText(frame, attn_txt, (10, 68),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.95, attn_col, 2)
+
+        # Emotion
+        emo_colors = {
+            "happy": (0, 220, 0), "sad": (200, 80, 80),
+            "angry": (0, 0, 230), "surprise": (0, 200, 220),
+            "fear": (150, 0, 200), "disgust": (100, 150, 0),
+            "neutral": (200, 200, 200),
+        }
+        emo_col = emo_colors.get(self.current_emotion, (200, 200, 200))
+        conf_str = f"{self.emotion_confidence:.0f}%" if self.emotion_confidence else ""
+        cv2.putText(frame, f"EMOTION: {self.current_emotion.upper()} {conf_str}", (10, 100),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, emo_col, 2)
+
+        # Engagement % (looking frames / total)
+        if self.total_frames > 0:
+            pct = int(100 * self.looking_frames / self.total_frames)
+            cv2.putText(frame, f"Engagement: {pct}%", (w - 200, 28),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (160, 220, 255), 2)
+
+        # Calibration hint / status
+        if not self.calibrated:
+            cv2.rectangle(frame, (0, h - 40), (w, h), (0, 80, 120), -1)
+            cv2.putText(frame, "Look at screen & press 'C' to calibrate",
+                        (10, h - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        else:
+            cv2.putText(frame, "CALIBRATED", (w - 150, h - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 120), 2)
+
+        # Debug pitch/yaw
+        cv2.putText(frame, f"P:{int(pitch)}  Y:{int(yaw)}", (10, h - 14),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (120, 120, 120), 1)
+
+    def draw_landmarks(self, frame, lms, w, h, looking, lic, ric):
+        color = (0, 255, 80) if looking else (0, 60, 255)
+        xs = [int(l.x * w) for l in lms.landmark]
+        ys = [int(l.y * h) for l in lms.landmark]
+        cv2.rectangle(frame, (min(xs), min(ys)), (max(xs), max(ys)), color, 2)
+        cv2.circle(frame, (int(lic.x * w), int(lic.y * h)), 5, (255, 230, 0), -1)
+        cv2.circle(frame, (int(ric.x * w), int(ric.y * h)), 5, (255, 230, 0), -1)
+
+    # ── Main Frame Processing ────────────────────────────────────────────────
 
     def process_frame(self, frame):
-        # Do NOT flip frame for internal processing if we want raw head pose to mean "forward"
-        # However, flipping for mirror display is UX standard.
-        # Let's flip for display AND processing to match user expectations of "left/right"
         frame = cv2.flip(frame, 1)
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.face_mesh.process(rgb_frame)
-        
-        h, w, _ = frame.shape
+        rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        res   = self.face_mesh.process(rgb)
+        h, w  = frame.shape[:2]
+
         face_detected = False
-        eyes_open = False
-        looking = False
-        
-        debug_info = ""
-        
-        if results.multi_face_landmarks:
+        eyes_open     = False
+        looking       = False
+        pitch = yaw   = 0.0
+
+        self.total_frames += 1
+
+        if res.multi_face_landmarks:
             face_detected = True
-            face_landmarks = results.multi_face_landmarks[0]
-            
-            # Eye Indices (Inner, Top, Outer, Bottom) - simplified for EAR
-            # Left: 33, 160, 158, 133, 153, 144
-            # Right: 362, 385, 387, 263, 373, 380
-            left_eye_indices = [33, 160, 158, 133, 153, 144]
-            right_eye_indices = [362, 385, 387, 263, 373, 380]
-            
-            left_landmarks = [face_landmarks.landmark[i] for i in left_eye_indices]
-            right_landmarks = [face_landmarks.landmark[i] for i in right_eye_indices]
-            
-            # Iris Centers
-            left_iris_center = face_landmarks.landmark[468]
-            right_iris_center = face_landmarks.landmark[473]
-            
-            # 1. Calculate EAR (Blink Detection)
-            left_ear = self.calculate_eye_aspect_ratio(left_landmarks, w, h)
-            right_ear = self.calculate_eye_aspect_ratio(right_landmarks, w, h)
-            avg_ear = (left_ear + right_ear) / 2.0
+            lms = res.multi_face_landmarks[0]
+
+            # Eye landmark indices
+            L_IDX = [33, 160, 158, 133, 153, 144]
+            R_IDX = [362, 385, 387, 263, 373, 380]
+            l_lms = [lms.landmark[i] for i in L_IDX]
+            r_lms = [lms.landmark[i] for i in R_IDX]
+
+            l_iris = lms.landmark[468]
+            r_iris = lms.landmark[473]
+
+            # EAR / blink
+            avg_ear = (self.calculate_ear(l_lms, w, h) + self.calculate_ear(r_lms, w, h)) / 2
             eyes_open = avg_ear > 0.2
-            
             if not eyes_open and time.time() - self.last_blink_time > 0.3:
                 self.blink_counter += 1
                 self.last_blink_time = time.time()
-                
-            # 2. Gaze Detection (Head Pose + Iris)
-            # Head Pose
-            pitch, yaw, roll = self.calculate_head_pose(face_landmarks, w, h)
-            
-            # Iris position (0.5 is center)
-            # We pass the eye corners (0=inner, 3=outer)
-            # Note: For left eye, 33 is inner, 133 is outer. Code above: index 0 is 33, index 3 is 133.
-            # For right eye, 362 is inner, 263 is outer. Code above: index 0 is 362, index 3 is 263.
-            # Wait, 362 is inner for right, 263 is outer. Correct.
-            
-            l_ratio = self.get_iris_position(left_landmarks, left_iris_center, w, h)
-            r_ratio = self.get_iris_position(right_landmarks, right_iris_center, w, h)
-            
-            # Calibration Check
-            if hasattr(self, 'do_calibrate') and self.do_calibrate:
-                self.calib_pitch = pitch
-                self.calib_yaw = yaw
+
+            # Head pose
+            pitch, yaw, _ = self.calculate_head_pose(lms, w, h)
+
+            # Iris ratios
+            l_ratio = self.get_iris_ratio(l_lms, l_iris, w, h)
+            r_ratio = self.get_iris_ratio(r_lms, r_iris, w, h)
+
+            # Calibrate if triggered
+            if self.do_calibrate:
+                self.calib_pitch   = pitch
+                self.calib_yaw     = yaw
                 self.calib_ratio_l = l_ratio
                 self.calib_ratio_r = r_ratio
-                self.calibrated = True
-                self.do_calibrate = False
-                print(f"Calibrated! Pitch:{pitch:.1f} Yaw:{yaw:.1f} L:{l_ratio:.2f} R:{r_ratio:.2f}")
+                self.calibrated    = True
+                self.do_calibrate  = False
+                print(f"Calibrated! P:{pitch:.1f} Y:{yaw:.1f}")
 
-            # Calculate Deltas from Calibration (or 0 if not calibrated)
-            target_pitch = self.calib_pitch if self.calibrated else 0
-            target_yaw = self.calib_yaw if self.calibrated else 0
-            target_l = self.calib_ratio_l if self.calibrated else 0.5
-            target_r = self.calib_ratio_r if self.calibrated else 0.5
-            
-            delta_pitch = abs(pitch - target_pitch)
-            delta_yaw = abs(yaw - target_yaw)
-            delta_l = abs(l_ratio - target_l)
-            delta_r = abs(r_ratio - target_r)
-            
-            # Thresholds REFINED (Relaxed further for better usability)
-            # Head facing forward: Pitch [-35, 35], Yaw [-45, 45]
-            # Iris centered: dist < 0.4 (meaning within 10% - 90% of eye width - checking for extreme side glances only)
-            is_face_valid = delta_pitch < 35 and delta_yaw < 45
-            is_iris_valid = delta_l < 0.4 and delta_r < 0.4
-            
-            looking = is_face_valid and is_iris_valid and eyes_open
-            
-            debug_info = f"P:{int(pitch)} Y:{int(yaw)} L:{l_ratio:.2f}"
-            
-            # Drawing
-            self.draw_debug(frame, face_landmarks, w, h, looking, left_iris_center, right_iris_center)
-            
-            # Emotion
-            x_coords = [int(lm.x * w) for lm in face_landmarks.landmark]
-            y_coords = [int(lm.y * h) for lm in face_landmarks.landmark]
-            face_box = (min(x_coords), min(y_coords), max(x_coords)-min(x_coords), max(y_coords)-min(y_coords))
-            self.update_emotion_async(frame.copy(), face_box)
-            
+            t_p = self.calib_pitch   if self.calibrated else 0
+            t_y = self.calib_yaw     if self.calibrated else 0
+            t_l = self.calib_ratio_l if self.calibrated else 0.5
+            t_r = self.calib_ratio_r if self.calibrated else 0.5
+
+            dp = abs(pitch - t_p)
+            dy = abs(yaw   - t_y)
+            dl = abs(l_ratio - t_l)
+            dr = abs(r_ratio - t_r)
+
+            is_head_ok  = dp < 35 and dy < 45
+            is_iris_ok  = dl < 0.4 and dr < 0.4
+            looking = is_head_ok and is_iris_ok and eyes_open
+
+            if looking:
+                self.looking_frames += 1
+
+            self.draw_landmarks(frame, lms, w, h, looking, l_iris, r_iris)
+
+            # Compute geometry-based sadness cue in main thread (fast, no model needed)
+            geo_sad_score = self.compute_geometric_sad_score(lms, w, h)
+            self.update_emotion_async(frame.copy(), lms, w, h, geo_sad_score)
+
         else:
-            self.current_emotion = "neutral"
+            self.current_emotion    = "neutral"
+            self.emotion_confidence = 0
 
-        self.draw_ui(frame, face_detected, eyes_open, looking, self.current_emotion, debug_info)
+        # Log this frame
+        ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        self.log_frame(ts, looking, self.current_emotion, self.blink_counter, pitch, yaw)
+
+        self.draw_ui(frame, face_detected, eyes_open, looking, pitch, yaw)
         self.save_screenshot(frame)
         return frame
-        
-    def draw_debug(self, frame, landmarks, w, h, looking, lic, ric):
-        color = (0, 255, 0) if looking else (0, 0, 255)
-        # Bounding box
-        x_c = [int(l.x * w) for l in landmarks.landmark]
-        y_c = [int(l.y * h) for l in landmarks.landmark]
-        cv2.rectangle(frame, (min(x_c), min(y_c)), (max(x_c), max(y_c)), color, 2)
-        
-        # Iris
-        cv2.circle(frame, (int(lic.x*w), int(lic.y*h)), 4, (255, 255, 0), -1)
-        cv2.circle(frame, (int(ric.x*w), int(ric.y*h)), 4, (255, 255, 0), -1)
 
-    def draw_ui(self, frame, face_detected, eyes_open, looking, emotion, debug_info=""):
-        status_y = 30
-        
-        # Main Status
-        cv2.putText(frame, f"Face: {'Yes' if face_detected else 'No'}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
-        cv2.putText(frame, f"Eyes: {'Open' if eyes_open else 'Closed'}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
-        
-        # Blinking (Restored)
-        cv2.putText(frame, f"Blinks: {self.blink_counter}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
-        
-        # LOOKING Status - Big and Bold
-        look_color = (0, 255, 0) if looking else (0, 0, 255)
-        look_text = "LOOKING AT SCREEN" if looking else "NOT LOOKING"
-        cv2.putText(frame, look_text, (10, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.8, look_color, 2)
-        
-        # Emotion
-        emo_color = (0, 255, 255)
-        if emotion == 'happy': emo_color = (0, 255, 0)
-        elif emotion == 'sad': emo_color = (0, 0, 255)
-        elif emotion == 'angry': emo_color = (0, 0, 255)
-        cv2.putText(frame, f"Emotion: {emotion.upper()}", (10, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.8, emo_color, 2)
-         
-        # Calibration Instruction
-        if not self.calibrated:
-            cv2.putText(frame, "Look at screen & Press 'C' to Calibrate", (20, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-        else:
-            cv2.putText(frame, "Calibrated", (frame.shape[1]-150, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            
-        # Debug Data
-        if debug_info:
-            cv2.putText(frame, debug_info, (10, 460), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+    # ── Run Loop ─────────────────────────────────────────────────────────────
 
     def run(self):
         cap = cv2.VideoCapture(0)
-        
         if not cap.isOpened():
-            print("Error: Could not open camera")
+            print("Error: Camera not found.")
             return
-        
+
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        
-        print("DeepFace Eye Tracking System Started")
-        print("Features: DeepFace Emotion | Eye Tracking | Gaze Detection")
-        print("Press 'q' to quit")
-        
+
+        print("ASD Learning Tool — Face & Emotion Tracker v2")
+        print("Press 'C' to calibrate | Press 'Q' to quit & save session")
+
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             frame = self.process_frame(frame)
-            cv2.imshow('Eye Tracker - ASD Learning Tool', frame)
-            
+            cv2.imshow("ASD Learning Tool — Face & Emotion Tracker v2", frame)
+
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
-            if key == ord('c'): self.do_calibrate = True
-        
+            elif key == ord('c'):
+                self.do_calibrate = True
+
         cap.release()
         cv2.destroyAllWindows()
         self.face_mesh.close()
 
+        # Save session
+        self.save_session_csv()
+        duration = (datetime.now() - self.session_start).seconds
+        print(f"\nSession Duration : {duration}s")
+        print(f"Total Blinks     : {self.blink_counter}")
+        if self.total_frames > 0:
+            pct = int(100 * self.looking_frames / self.total_frames)
+            print(f"Engagement       : {pct}%")
+        if self.session_emotions:
+            dominant = max(self.session_emotions, key=self.session_emotions.get)
+            print(f"Dominant Emotion : {dominant}")
+
+
 def main():
     tracker = EmotionEyeTracker()
     tracker.run()
+
 
 if __name__ == "__main__":
     main()
