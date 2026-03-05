@@ -63,6 +63,20 @@ const gamesList = [
     icon: '🗣️',
     color: '#45f2f5',
   },
+  {
+    id: 6,
+    name: 'Neon Rhythm',
+    description: 'Keep the beat and find your flow! Adapts to your mood.',
+    icon: '⚡',
+    color: '#00f2fe',
+  },
+  {
+    id: 7,
+    name: 'Astral Jump',
+    description: 'Navigate the stars in this 3D cosmic challenge.',
+    icon: '🚀',
+    color: '#a855f7',
+  },
 ];
 
 export default function Page4() {
@@ -298,6 +312,10 @@ export default function Page4() {
                         <Link href="/games/mirror-emotions" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : game.id === 4 ? (
                         <Link href="/games/color-pattern-game" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
+                      ) : game.id === 6 ? (
+                        <Link href="/games/neon-rhythm" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
+                      ) : game.id === 7 ? (
+                        <Link href="/games/astral-jump" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : (
                         <button className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</button>
                       )}
