@@ -76,6 +76,13 @@ const gamesList = [
     icon: '🚀',
     color: '#a855f7',
   },
+  {
+    id: 8,
+    name: 'Story Reader',
+    description: 'Read stories out loud word by word — powered by Whisper AI!',
+    icon: '📖',
+    color: '#e0c3fc',
+  },
 ];
 
 export default function Page4() {
@@ -315,6 +322,8 @@ export default function Page4() {
                         <Link href="/games/neon-rhythm" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : game.id === 7 ? (
                         <Link href="/games/astral-jump" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
+                      ) : game.id === 8 ? (
+                        <Link href="/games/story-reader" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : (
                         <button className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</button>
                       )}

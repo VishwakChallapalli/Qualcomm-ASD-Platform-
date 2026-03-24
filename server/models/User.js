@@ -62,6 +62,13 @@ const userSchema = new mongoose.Schema({
             score:       { type: Number, default: 0 },
             emotionTime: emotionTimeSchema,
         },
+        storyReader: {
+            timePlayed:       { type: Number, default: 0 },
+            wins:             { type: Number, default: 0 }, // total words read correctly
+            score:            { type: Number, default: 0 }, // total stories completed
+            storiesCompleted: { type: Number, default: 0 },
+            emotionTime:      emotionTimeSchema,
+        },
     },
 });
 

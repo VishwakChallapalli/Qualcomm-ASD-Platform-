@@ -229,13 +229,14 @@ app.get("/progress", async (req, res) => {
             neonRhythm:     mergeGame(gp.neonRhythm),
             astralJump:     mergeGame(gp.astralJump),
             whatWouldYouDo: mergeGame(gp.whatWouldYouDo),
+            storyReader:    mergeGame(gp.storyReader),
         });
     } catch {
         return res.status(401).json({ message: "Invalid token" });
     }
 });
 
-// Accepts: { game, addTimePlayed?, addWins?, setScore?, addComputerWins?, addTies?, setLevel?, addEmotionTime? }
+// Accepts: { game, addTimePlayed?, addWins?, setScore?, addScore?, addComputerWins?, addTies?, setLevel?, addEmotionTime? }
 app.put("/updateProgress", async (req, res) => {
     const token = req.cookies.accessToken;
     if (!token) return res.status(401).json({ message: "Not logged in" });
@@ -244,7 +245,7 @@ app.put("/updateProgress", async (req, res) => {
         const user = await User.findOne({ accountName: decoded.accountName });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const { game, addTimePlayed, addWins, setScore, addComputerWins, addTies, setLevel, addEmotionTime } = req.body;
+        const { game, addTimePlayed, addWins, setScore, addScore, addComputerWins, addTies, setLevel, addEmotionTime } = req.body;
 
         if (!user.gameProgress) user.gameProgress = {};
         if (!user.gameProgress[game]) user.gameProgress[game] = {};
@@ -256,6 +257,7 @@ app.put("/updateProgress", async (req, res) => {
         if (addComputerWins) g.computerWins = (g.computerWins || 0) + addComputerWins;
         if (addTies)       g.ties       = (g.ties || 0)       + addTies;
         if (setScore !== undefined && setScore > (g.score || 0)) g.score = setScore;
+        if (addScore)      g.score      = (g.score || 0)      + addScore; // additive (e.g. stories completed)
         if (setLevel !== undefined && setLevel > (g.level || 0)) g.level = setLevel;
 
         if (addEmotionTime && typeof addEmotionTime === "object") {

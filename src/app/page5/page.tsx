@@ -68,6 +68,7 @@ export default function Page5() {
   const [neonRhythm, setNeonRhythm]       = useState<GameStats>(emptyStats());
   const [astralJump, setAstralJump]       = useState<GameStats>(emptyStats());
   const [whatWouldYouDo, setWhatWouldYouDo] = useState<GameStats>(emptyStats());
+  const [storyReader, setStoryReader]       = useState<GameStats>(emptyStats());
 
   useEffect(() => {
     async function loadAllData() {
@@ -89,6 +90,7 @@ export default function Page5() {
         if (prog.neonRhythm)    setNeonRhythm(parseStats(prog.neonRhythm));
         if (prog.astralJump)    setAstralJump(parseStats(prog.astralJump));
         if (prog.whatWouldYouDo) setWhatWouldYouDo(parseStats(prog.whatWouldYouDo));
+        if (prog.storyReader)    setStoryReader(parseStats(prog.storyReader));
       }
     }
     loadAllData();
@@ -113,7 +115,7 @@ export default function Page5() {
     ? avatarOptions.find((a) => a.id === selectedAvatar)
     : null;
 
-  const allStats = [ticTacToe, mathGame, mirrorEmotions, colorPattern, neonRhythm, astralJump, whatWouldYouDo];
+  const allStats = [ticTacToe, mathGame, mirrorEmotions, colorPattern, neonRhythm, astralJump, whatWouldYouDo, storyReader];
   const totalTimePlayed = allStats.reduce((sum, g) => sum + g.timePlayed, 0);
   const totalWins       = allStats.reduce((sum, g) => sum + g.wins, 0);
 
@@ -194,6 +196,17 @@ export default function Page5() {
       winLabel: 'Correct Choices',
       scoreLabel: 'Total Score',
       scoreValue: whatWouldYouDo.score,
+    },
+    {
+      key: 'story-reader',
+      name: 'Story Reader',
+      emoji: '📖',
+      color: '#e0c3fc',
+      href: '/games/story-reader',
+      stats: storyReader,
+      winLabel: 'Words Read Correctly',
+      scoreLabel: 'Stories Completed',
+      scoreValue: storyReader.score,
     },
   ];
 
