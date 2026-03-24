@@ -6,6 +6,8 @@ import styles from '@/styles/math-game.module.css';
 
 type Operation = '+' | '-' | '*' | '/';
 
+const EMOTION_SERVER = 'http://127.0.0.1:5050/emotion';
+
 function updateProgress(payload: Record<string, unknown>) {
   fetch('/api/updateProgress', {
     method: 'PUT',
@@ -24,6 +26,8 @@ export default function MathGamePage() {
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
   const sessionStartRef = useRef<number>(Date.now());
+  const emotionTimeRef = useRef<Record<string, number>>({});
+  const lastEmotionRef = useRef<string>('neutral');
 
   useEffect(() => {
     generateQuestion();
@@ -43,11 +47,39 @@ export default function MathGamePage() {
 
     return () => {
       const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
-      if (elapsed > 0) {
-        updateProgress({ game: 'mathGame', addTimePlayed: elapsed });
+      const payload: Record<string, unknown> = { game: 'mathGame' };
+      if (elapsed > 0) payload.addTimePlayed = elapsed;
+      if (Object.keys(emotionTimeRef.current).length > 0) {
+        payload.addEmotionTime = { ...emotionTimeRef.current };
+      }
+      if (elapsed > 0 || Object.keys(emotionTimeRef.current).length > 0) {
+        updateProgress(payload);
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Emotion polling + time accumulation
+  useEffect(() => {
+    const emotionInterval = setInterval(async () => {
+      try {
+        const res = await fetch(EMOTION_SERVER, { signal: AbortSignal.timeout(1000) });
+        if (res.ok) {
+          const data = await res.json();
+          lastEmotionRef.current = data.emotion || 'neutral';
+        }
+      } catch { /* emotion server unavailable */ }
+    }, 2000);
+
+    const accumInterval = setInterval(() => {
+      const em = lastEmotionRef.current;
+      emotionTimeRef.current[em] = (emotionTimeRef.current[em] || 0) + 1;
+    }, 1000);
+
+    return () => {
+      clearInterval(emotionInterval);
+      clearInterval(accumInterval);
+    };
   }, []);
 
   useEffect(() => {

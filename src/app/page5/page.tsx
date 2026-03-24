@@ -15,10 +15,21 @@ const avatarOptions = [
 ];
 
 interface GameStats {
-  timePlayed: number; // seconds
+  timePlayed: number;
   wins: number;
   score: number;
+  emotionTime: Record<string, number>;
 }
+
+const EMOTION_CONFIG: Array<{ key: string; label: string; color: string; emoji: string }> = [
+  { key: 'happy',     label: 'Happy',     color: '#fbbf24', emoji: '😊' },
+  { key: 'neutral',   label: 'Neutral',   color: '#94a3b8', emoji: '😐' },
+  { key: 'sad',       label: 'Sad',       color: '#60a5fa', emoji: '😢' },
+  { key: 'angry',     label: 'Angry',     color: '#f87171', emoji: '😠' },
+  { key: 'surprised', label: 'Surprised', color: '#fb923c', emoji: '😮' },
+  { key: 'fearful',   label: 'Fearful',   color: '#a78bfa', emoji: '😨' },
+  { key: 'disgusted', label: 'Disgusted', color: '#4ade80', emoji: '🤢' },
+];
 
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -30,19 +41,36 @@ function formatTime(seconds: number): string {
   return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
 }
 
+function emptyStats(): GameStats {
+  return { timePlayed: 0, wins: 0, score: 0, emotionTime: {} };
+}
+
+function parseStats(raw: Record<string, number | Record<string, number>> | undefined): GameStats {
+  if (!raw) return emptyStats();
+  return {
+    timePlayed: (raw.timePlayed as number) || 0,
+    wins:       (raw.wins as number)       || 0,
+    score:      (raw.score as number)      || 0,
+    emotionTime: (raw.emotionTime as Record<string, number>) || {},
+  };
+}
+
 export default function Page5() {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
   const [userName, setUserName] = useState<string>('User');
   const [showExploreDropdown, setShowExploreDropdown] = useState(false);
 
-  const [ticTacToe, setTicTacToe] = useState<GameStats>({ timePlayed: 0, wins: 0, score: 0 });
-  const [mathGame, setMathGame] = useState<GameStats>({ timePlayed: 0, wins: 0, score: 0 });
-  const [mirrorEmotions, setMirrorEmotions] = useState<GameStats>({ timePlayed: 0, wins: 0, score: 0 });
+  const [ticTacToe, setTicTacToe]         = useState<GameStats>(emptyStats());
+  const [mathGame, setMathGame]           = useState<GameStats>(emptyStats());
+  const [mirrorEmotions, setMirrorEmotions] = useState<GameStats>(emptyStats());
+  const [colorPattern, setColorPattern]   = useState<GameStats>(emptyStats());
+  const [neonRhythm, setNeonRhythm]       = useState<GameStats>(emptyStats());
+  const [astralJump, setAstralJump]       = useState<GameStats>(emptyStats());
+  const [whatWouldYouDo, setWhatWouldYouDo] = useState<GameStats>(emptyStats());
 
   useEffect(() => {
     async function loadAllData() {
-      // Load user info
       const meRes = await fetch('/api/me').catch(() => null);
       if (meRes?.ok) {
         const me = await meRes.json();
@@ -51,32 +79,16 @@ export default function Page5() {
         if (me.accountName) setUserName(me.accountName);
       }
 
-      // Load game progress from DB
       const progRes = await fetch('/api/progress').catch(() => null);
       if (progRes?.ok) {
         const prog = await progRes.json();
-
-        if (prog.ticTacToe) {
-          setTicTacToe({
-            timePlayed: prog.ticTacToe.timePlayed || 0,
-            wins:       prog.ticTacToe.wins       || 0,
-            score:      prog.ticTacToe.wins        || 0, // use wins as "games won" score
-          });
-        }
-        if (prog.mathGame) {
-          setMathGame({
-            timePlayed: prog.mathGame.timePlayed || 0,
-            wins:       prog.mathGame.wins       || 0,
-            score:      prog.mathGame.score      || 0,
-          });
-        }
-        if (prog.mirrorEmotions) {
-          setMirrorEmotions({
-            timePlayed: prog.mirrorEmotions.timePlayed || 0,
-            wins:       prog.mirrorEmotions.wins       || 0,
-            score:      prog.mirrorEmotions.score      || 0,
-          });
-        }
+        if (prog.ticTacToe)     setTicTacToe(parseStats(prog.ticTacToe));
+        if (prog.mathGame)      setMathGame(parseStats(prog.mathGame));
+        if (prog.mirrorEmotions) setMirrorEmotions(parseStats(prog.mirrorEmotions));
+        if (prog.colorPattern)  setColorPattern(parseStats(prog.colorPattern));
+        if (prog.neonRhythm)    setNeonRhythm(parseStats(prog.neonRhythm));
+        if (prog.astralJump)    setAstralJump(parseStats(prog.astralJump));
+        if (prog.whatWouldYouDo) setWhatWouldYouDo(parseStats(prog.whatWouldYouDo));
       }
     }
     loadAllData();
@@ -101,8 +113,9 @@ export default function Page5() {
     ? avatarOptions.find((a) => a.id === selectedAvatar)
     : null;
 
-  const totalTimePlayed = ticTacToe.timePlayed + mathGame.timePlayed + mirrorEmotions.timePlayed;
-  const totalWins = ticTacToe.wins + mathGame.wins + mirrorEmotions.wins;
+  const allStats = [ticTacToe, mathGame, mirrorEmotions, colorPattern, neonRhythm, astralJump, whatWouldYouDo];
+  const totalTimePlayed = allStats.reduce((sum, g) => sum + g.timePlayed, 0);
+  const totalWins       = allStats.reduce((sum, g) => sum + g.wins, 0);
 
   const games = [
     {
@@ -137,6 +150,50 @@ export default function Page5() {
       winLabel: 'Correct Matches',
       scoreLabel: 'Total Score',
       scoreValue: mirrorEmotions.score,
+    },
+    {
+      key: 'color-pattern',
+      name: 'Color Patterns',
+      emoji: '🎨',
+      color: '#f59e0b',
+      href: '/games/color-pattern-game',
+      stats: colorPattern,
+      winLabel: 'Patterns Solved',
+      scoreLabel: 'High Score',
+      scoreValue: colorPattern.score,
+    },
+    {
+      key: 'neon-rhythm',
+      name: 'Neon Rhythm',
+      emoji: '⚡',
+      color: '#4facfe',
+      href: '/games/neon-rhythm',
+      stats: neonRhythm,
+      winLabel: 'Notes Hit',
+      scoreLabel: 'High Score',
+      scoreValue: neonRhythm.score,
+    },
+    {
+      key: 'astral-jump',
+      name: 'Astral Jump',
+      emoji: '🚀',
+      color: '#a855f7',
+      href: '/games/astral-jump',
+      stats: astralJump,
+      winLabel: 'Runs Completed',
+      scoreLabel: 'Best Distance',
+      scoreValue: astralJump.score,
+    },
+    {
+      key: 'what-would-you-do',
+      name: 'What Would You Do?',
+      emoji: '🤔',
+      color: '#10b981',
+      href: null,
+      stats: whatWouldYouDo,
+      winLabel: 'Correct Choices',
+      scoreLabel: 'Total Score',
+      scoreValue: whatWouldYouDo.score,
     },
   ];
 
@@ -189,7 +246,7 @@ export default function Page5() {
         <div className={styles.bannerText}>
           <h1 className={styles.bannerTitle}>My Progress</h1>
           <p className={styles.bannerSubtitle}>
-            Track how long you've played each game and how many times you've won.
+            Track how long you&apos;ve played each game and how many times you&apos;ve won.
           </p>
         </div>
         <div className={styles.bannerBadge}>📊</div>
@@ -214,7 +271,7 @@ export default function Page5() {
         <div className={styles.summaryCard}>
           <span className={styles.summaryIcon}>🎮</span>
           <div>
-            <p className={styles.summaryValue}>{games.filter(g => g.stats.timePlayed > 0).length}</p>
+            <p className={styles.summaryValue}>{allStats.filter(g => g.timePlayed > 0).length}</p>
             <p className={styles.summaryLabel}>Games Played</p>
           </div>
         </div>
@@ -226,6 +283,9 @@ export default function Page5() {
         <div className={styles.gameCards}>
           {games.map((game) => {
             const played = game.stats.timePlayed > 0;
+            const emotionData = game.stats.emotionTime || {};
+            const totalEmotionTime = EMOTION_CONFIG.reduce((sum, e) => sum + (emotionData[e.key] || 0), 0);
+
             return (
               <div key={game.key} className={styles.gameCard} style={{ borderTopColor: game.color }}>
                 <div className={styles.gameCardHeader}>
@@ -236,9 +296,13 @@ export default function Page5() {
                     <h3 className={styles.gameName}>{game.name}</h3>
                     {!played && <span className={styles.notPlayedBadge}>Not played yet</span>}
                   </div>
-                  <Link href={game.href} className={styles.playLink} style={{ color: game.color, borderColor: game.color }}>
-                    Play →
-                  </Link>
+                  {game.href ? (
+                    <Link href={game.href} className={styles.playLink} style={{ color: game.color, borderColor: game.color }}>
+                      Play →
+                    </Link>
+                  ) : (
+                    <span className={styles.comingSoonBadge}>Coming Soon</span>
+                  )}
                 </div>
 
                 <div className={styles.gameStats}>
@@ -286,6 +350,36 @@ export default function Page5() {
                     </span>
                   </div>
                 )}
+
+                {/* Emotion Breakdown — always visible */}
+                <div className={styles.emotionSection}>
+                  <p className={styles.emotionSectionTitle}>Emotion Breakdown</p>
+                  {!played && (
+                    <p className={styles.emotionNoData}>Play this game to see emotion data</p>
+                  )}
+                  {played && (
+                    <div className={styles.emotionList}>
+                      {EMOTION_CONFIG.map((cfg) => {
+                        const seconds = emotionData[cfg.key] || 0;
+                        const pct = totalEmotionTime > 0 ? Math.round((seconds / totalEmotionTime) * 100) : 0;
+                        return (
+                          <div key={cfg.key} className={styles.emotionRow}>
+                            <span className={styles.emotionEmoji}>{cfg.emoji}</span>
+                            <span className={styles.emotionLabel}>{cfg.label}</span>
+                            <div className={styles.emotionBarTrack}>
+                              <div
+                                className={styles.emotionBarFill}
+                                style={{ width: `${pct}%`, backgroundColor: cfg.color }}
+                              />
+                            </div>
+                            <span className={styles.emotionTime}>{seconds > 0 ? formatTime(seconds) : '0s'}</span>
+                            <span className={styles.emotionPct}>{pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}

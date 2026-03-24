@@ -9,6 +9,15 @@ import styles from '@/styles/astral-jump.module.css';
 
 const EMOTION_SERVER = "http://127.0.0.1:5050/emotion";
 
+function updateProgress(payload: Record<string, unknown>) {
+    fetch('/api/updateProgress', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+    }).catch(() => {});
+}
+
 // ── Game Logic Components ──
 
 function Player({ jump, onCollide, posY }: { jump: boolean, onCollide: () => void, posY: number }) {
@@ -89,6 +98,10 @@ export default function AstralJumpPage() {
     const gravity = -0.012;
     const jumpStrength = 0.25;
 
+    const sessionStartRef = useRef<number>(Date.now());
+    const emotionTimeRef = useRef<Record<string, number>>({});
+    const lastEmotionRef = useRef<string>("neutral");
+
     useEffect(() => {
         if (!isPlaying || gameOver) return;
 
@@ -113,19 +126,31 @@ export default function AstralJumpPage() {
     // ── Emotion Monitoring ──
     useEffect(() => {
         if (!isPlaying || gameOver) return;
-        const interval = setInterval(async () => {
+
+        const emotionInterval = setInterval(async () => {
             try {
                 const res = await fetch(EMOTION_SERVER);
                 if (res.ok) {
                     const data = await res.json();
-                    setEmotion(data.emotion);
-                    if (['angry', 'fear'].includes(data.emotion)) setFlowState('Stressed');
-                    else if (['neutral', 'sad'].includes(data.emotion)) setFlowState('Bored');
+                    const em = data.emotion || 'neutral';
+                    setEmotion(em);
+                    lastEmotionRef.current = em;
+                    if (['angry', 'fear'].includes(em)) setFlowState('Stressed');
+                    else if (['neutral', 'sad'].includes(em)) setFlowState('Bored');
                     else setFlowState('Flow');
                 }
             } catch (e) { }
         }, 2000);
-        return () => clearInterval(interval);
+
+        const accumInterval = setInterval(() => {
+            const em = lastEmotionRef.current;
+            emotionTimeRef.current[em] = (emotionTimeRef.current[em] || 0) + 1;
+        }, 1000);
+
+        return () => {
+            clearInterval(emotionInterval);
+            clearInterval(accumInterval);
+        };
     }, [isPlaying, gameOver]);
 
     // Speed Progression
@@ -154,6 +179,27 @@ export default function AstralJumpPage() {
         return () => clearInterval(interval);
     }, [isPlaying, gameOver]);
 
+    // Save score + emotionTime on game over
+    useEffect(() => {
+        if (!gameOver) return;
+        updateProgress({
+            game: 'astralJump',
+            setScore: score,
+            addEmotionTime: { ...emotionTimeRef.current },
+        });
+    // score is captured at game-over; intentionally not in deps to avoid double-save
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameOver]);
+
+    // Save timePlayed on unmount
+    useEffect(() => {
+        sessionStartRef.current = Date.now();
+        return () => {
+            const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+            if (elapsed > 0) updateProgress({ game: 'astralJump', addTimePlayed: elapsed });
+        };
+    }, []);
+
     const handleCollide = () => {
         setHealth(h => {
             const newHealth = Math.max(0, h - 20);
@@ -167,6 +213,7 @@ export default function AstralJumpPage() {
         setHealth(100);
         setSpeedMultiplier(1.0);
         setGameOver(false);
+        emotionTimeRef.current = {};
         setIsPlaying(true);
         setPosY(0);
         velocity.current = 0;

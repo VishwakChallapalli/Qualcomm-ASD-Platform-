@@ -1,10 +1,21 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import styles from '@/styles/ColorPatternPage.module.css';
 import Link from 'next/link';
 
 type Color = 'red' | 'green' | 'yellow' | 'blue';
+
+const EMOTION_SERVER = 'http://127.0.0.1:5050/emotion';
+
+function updateProgress(payload: Record<string, unknown>) {
+  fetch('/api/updateProgress', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 interface Pattern {
     sequence: Color[];
@@ -69,6 +80,47 @@ export default function ColorPatternGame() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [showError, setShowError] = useState(false);
 
+    const sessionStartRef = useRef<number>(Date.now());
+    const emotionTimeRef = useRef<Record<string, number>>({});
+    const lastEmotionRef = useRef<string>('neutral');
+
+    // Emotion polling + time accumulation
+    useEffect(() => {
+        const emotionInterval = setInterval(async () => {
+            try {
+                const res = await fetch(EMOTION_SERVER, { signal: AbortSignal.timeout(1000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    lastEmotionRef.current = data.emotion || 'neutral';
+                }
+            } catch { /* emotion server unavailable */ }
+        }, 2000);
+
+        const accumInterval = setInterval(() => {
+            const em = lastEmotionRef.current;
+            emotionTimeRef.current[em] = (emotionTimeRef.current[em] || 0) + 1;
+        }, 1000);
+
+        return () => {
+            clearInterval(emotionInterval);
+            clearInterval(accumInterval);
+        };
+    }, []);
+
+    // Save timePlayed + emotionTime on unmount
+    useEffect(() => {
+        sessionStartRef.current = Date.now();
+        return () => {
+            const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+            const payload: Record<string, unknown> = { game: 'colorPattern' };
+            if (elapsed > 0) payload.addTimePlayed = elapsed;
+            if (Object.keys(emotionTimeRef.current).length > 0) {
+                payload.addEmotionTime = { ...emotionTimeRef.current };
+            }
+            updateProgress(payload);
+        };
+    }, []);
+
     // Takes explicit difficulty arg to avoid stale closures in setTimeout
     const startNewPattern = useCallback((nextDifficulty: number) => {
         setPattern(generatePattern(nextDifficulty));
@@ -105,6 +157,9 @@ export default function ColorPatternGame() {
 
             setScore(newScore);
             setDifficulty(nextDifficulty);
+
+            // Save to DB
+            updateProgress({ game: 'colorPattern', addWins: 1, setScore: newScore, setLevel: nextDifficulty });
 
             setTimeout(() => {
                 startNewPattern(nextDifficulty);

@@ -203,15 +203,39 @@ app.get("/progress", async (req, res) => {
     if (!token) return res.status(401).json({ message: "Not logged in" });
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findOne({ accountName: decoded.accountName });
+        const user = await User.findOne({ accountName: decoded.accountName }).lean();
         if (!user) return res.status(404).json({ message: "User not found" });
-        res.json(user.gameProgress || {});
+
+        const defaultEmotionTime = { happy: 0, sad: 0, angry: 0, surprised: 0, fearful: 0, disgusted: 0, neutral: 0 };
+        const defaultGame = (overrides = {}) => ({
+            timePlayed: 0, wins: 0, score: 0, emotionTime: { ...defaultEmotionTime }, ...overrides,
+        });
+
+        const gp = user.gameProgress || {};
+        const mergeGame = (saved) => {
+            if (!saved) return defaultGame();
+            return {
+                ...defaultGame(),
+                ...saved,
+                emotionTime: { ...defaultEmotionTime, ...(saved.emotionTime || {}) },
+            };
+        };
+
+        res.json({
+            ticTacToe:      mergeGame(gp.ticTacToe),
+            mathGame:       mergeGame(gp.mathGame),
+            mirrorEmotions: mergeGame(gp.mirrorEmotions),
+            colorPattern:   mergeGame(gp.colorPattern),
+            neonRhythm:     mergeGame(gp.neonRhythm),
+            astralJump:     mergeGame(gp.astralJump),
+            whatWouldYouDo: mergeGame(gp.whatWouldYouDo),
+        });
     } catch {
         return res.status(401).json({ message: "Invalid token" });
     }
 });
 
-// Accepts: { game, addTimePlayed?, addWins?, setScore?, addComputerWins?, addTies?, setLevel? }
+// Accepts: { game, addTimePlayed?, addWins?, setScore?, addComputerWins?, addTies?, setLevel?, addEmotionTime? }
 app.put("/updateProgress", async (req, res) => {
     const token = req.cookies.accessToken;
     if (!token) return res.status(401).json({ message: "Not logged in" });
@@ -220,7 +244,7 @@ app.put("/updateProgress", async (req, res) => {
         const user = await User.findOne({ accountName: decoded.accountName });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const { game, addTimePlayed, addWins, setScore, addComputerWins, addTies, setLevel } = req.body;
+        const { game, addTimePlayed, addWins, setScore, addComputerWins, addTies, setLevel, addEmotionTime } = req.body;
 
         if (!user.gameProgress) user.gameProgress = {};
         if (!user.gameProgress[game]) user.gameProgress[game] = {};
@@ -232,7 +256,16 @@ app.put("/updateProgress", async (req, res) => {
         if (addComputerWins) g.computerWins = (g.computerWins || 0) + addComputerWins;
         if (addTies)       g.ties       = (g.ties || 0)       + addTies;
         if (setScore !== undefined && setScore > (g.score || 0)) g.score = setScore;
-        if (setLevel !== undefined && setLevel > (g.level || 1)) g.level = setLevel;
+        if (setLevel !== undefined && setLevel > (g.level || 0)) g.level = setLevel;
+
+        if (addEmotionTime && typeof addEmotionTime === "object") {
+            if (!g.emotionTime) g.emotionTime = {};
+            for (const [emotion, seconds] of Object.entries(addEmotionTime)) {
+                if (typeof seconds === "number" && seconds > 0) {
+                    g.emotionTime[emotion] = (g.emotionTime[emotion] || 0) + seconds;
+                }
+            }
+        }
 
         user.markModified("gameProgress");
         await user.save();

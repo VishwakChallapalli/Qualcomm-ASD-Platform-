@@ -13,6 +13,15 @@ interface Note {
 
 const EMOTION_SERVER = "http://127.0.0.1:5050/emotion";
 
+function updateProgress(payload: Record<string, unknown>) {
+    fetch('/api/updateProgress', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+    }).catch(() => {});
+}
+
 export default function NeonRhythmPage() {
     const [score, setScore] = useState(0);
     const [health, setHealth] = useState(100);
@@ -33,6 +42,11 @@ export default function NeonRhythmPage() {
         tolerance: 20,
     });
 
+    const sessionStartRef = useRef<number>(Date.now());
+    const emotionTimeRef = useRef<Record<string, number>>({});
+    const lastEmotionRef = useRef<string>("neutral");
+    const hitsRef = useRef<number>(0);
+
     // ── Emotion Monitoring ──
     useEffect(() => {
         if (!isPlaying) return;
@@ -44,6 +58,7 @@ export default function NeonRhythmPage() {
                     const data = await res.json();
                     const currentEmotion = data.emotion || "neutral";
                     setEmotion(currentEmotion);
+                    lastEmotionRef.current = currentEmotion;
 
                     // Flow Logic Adaptation: Flow > Bored > Stressed
                     if (["angry", "fear", "disgust"].includes(currentEmotion)) {
@@ -65,8 +80,17 @@ export default function NeonRhythmPage() {
             }
         };
 
-        const interval = setInterval(checkEmotion, 3000);
-        return () => clearInterval(interval);
+        const emotionInterval = setInterval(checkEmotion, 3000);
+
+        const accumInterval = setInterval(() => {
+            const em = lastEmotionRef.current;
+            emotionTimeRef.current[em] = (emotionTimeRef.current[em] || 0) + 1;
+        }, 1000);
+
+        return () => {
+            clearInterval(emotionInterval);
+            clearInterval(accumInterval);
+        };
     }, [isPlaying]);
 
     // ── Game Loop ──
@@ -118,6 +142,28 @@ export default function NeonRhythmPage() {
         return () => cancelAnimationFrame(requestRef.current);
     }, [isPlaying, update]);
 
+    // Save score + hits on game over
+    useEffect(() => {
+        if (!gameOver) return;
+        updateProgress({
+            game: 'neonRhythm',
+            setScore: score,
+            addWins: hitsRef.current,
+            addEmotionTime: { ...emotionTimeRef.current },
+        });
+    // score is captured at game-over; intentionally not in deps to avoid double-save
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameOver]);
+
+    // Save timePlayed on unmount
+    useEffect(() => {
+        sessionStartRef.current = Date.now();
+        return () => {
+            const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+            if (elapsed > 0) updateProgress({ game: 'neonRhythm', addTimePlayed: elapsed });
+        };
+    }, []);
+
     const handleInput = useCallback((e: React.KeyboardEvent | React.MouseEvent) => {
         if (!isPlaying) return;
 
@@ -128,6 +174,7 @@ export default function NeonRhythmPage() {
                 const dist = Math.abs(note.distance - gameConfig.current.hitZone);
                 if (!hit && dist < gameConfig.current.tolerance) {
                     setScore(s => s + 100);
+                    hitsRef.current += 1;
                     hit = true;
                     return false; // Remove note
                 }
@@ -142,6 +189,8 @@ export default function NeonRhythmPage() {
         setHealth(100);
         setGameOver(false);
         setNotes([]);
+        hitsRef.current = 0;
+        emotionTimeRef.current = {};
         setIsPlaying(true);
         setShowInstructions(false);
     };
