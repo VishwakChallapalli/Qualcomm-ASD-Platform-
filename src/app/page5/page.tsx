@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/page5.module.css';
 import EmotionMonitor from '@/components/EmotionMonitor';
+import EmotionLineChart, { Session } from '@/components/EmotionLineChart';
 
 const avatarOptions = [
   { id: 1, name: 'Alex', baseColor: '#4a90e2', emoji: '🤖' },
@@ -19,6 +20,7 @@ interface GameStats {
   wins: number;
   score: number;
   emotionTime: Record<string, number>;
+  sessions: Session[];
 }
 
 const EMOTION_CONFIG: Array<{ key: string; label: string; color: string; emoji: string }> = [
@@ -42,16 +44,17 @@ function formatTime(seconds: number): string {
 }
 
 function emptyStats(): GameStats {
-  return { timePlayed: 0, wins: 0, score: 0, emotionTime: {} };
+  return { timePlayed: 0, wins: 0, score: 0, emotionTime: {}, sessions: [] };
 }
 
-function parseStats(raw: Record<string, number | Record<string, number>> | undefined): GameStats {
+function parseStats(raw: Record<string, unknown> | undefined): GameStats {
   if (!raw) return emptyStats();
   return {
     timePlayed: (raw.timePlayed as number) || 0,
     wins:       (raw.wins as number)       || 0,
     score:      (raw.score as number)      || 0,
     emotionTime: (raw.emotionTime as Record<string, number>) || {},
+    sessions:   (raw.sessions as Session[]) || [],
   };
 }
 
@@ -60,6 +63,7 @@ export default function Page5() {
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
   const [userName, setUserName] = useState<string>('User');
   const [showExploreDropdown, setShowExploreDropdown] = useState(false);
+  const [selectedTrendGame, setSelectedTrendGame] = useState<string>('ticTacToe');
 
   const [ticTacToe, setTicTacToe]         = useState<GameStats>(emptyStats());
   const [mathGame, setMathGame]           = useState<GameStats>(emptyStats());
@@ -289,6 +293,41 @@ export default function Page5() {
           </div>
         </div>
       </div>
+
+      {/* Emotion Trends */}
+      {(() => {
+        const gameKeyMap: Record<string, GameStats> = {
+          ticTacToe, mathGame, mirrorEmotions, colorPattern,
+          neonRhythm, astralJump, whatWouldYouDo, storyReader,
+        };
+        const gameLabels: Record<string, string> = {
+          ticTacToe: 'Tic Tac Toe', mathGame: 'Math Game',
+          mirrorEmotions: 'Mirror Emotions', colorPattern: 'Color Patterns',
+          neonRhythm: 'Neon Rhythm', astralJump: 'Astral Jump',
+          whatWouldYouDo: 'What Would You Do?', storyReader: 'Story Reader',
+        };
+        const playedGames = Object.keys(gameKeyMap).filter(k => gameKeyMap[k].timePlayed > 0);
+        const trendSessions = gameKeyMap[selectedTrendGame]?.sessions ?? [];
+        return (
+          <div className={styles.trendsSection}>
+            <div className={styles.trendsHeader}>
+              <h2 className={styles.sectionTitle}>Emotion Trends</h2>
+              <select
+                className={styles.gameSelector}
+                value={selectedTrendGame}
+                onChange={(e) => setSelectedTrendGame(e.target.value)}
+              >
+                {Object.keys(gameKeyMap).map(k => (
+                  <option key={k} value={k} disabled={!playedGames.includes(k)}>
+                    {gameLabels[k]}{!playedGames.includes(k) ? ' (not played)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <EmotionLineChart sessions={trendSessions} />
+          </div>
+        );
+      })()}
 
       {/* Game Cards */}
       <div className={styles.gamesSection}>

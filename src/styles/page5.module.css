@@ -507,6 +507,42 @@
   flex-shrink: 0;
 }
 
+/* ── Emotion Trends Section ──────────────────────── */
+.trendsSection {
+  margin: 1.75rem 2rem 0;
+  background: #ffffff;
+  border: 1px solid #e4e9f2;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.trendsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.gameSelector {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #d3dae6;
+  border-radius: 8px;
+  background: #f9fbff;
+  color: #1f2937;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.gameSelector:hover,
+.gameSelector:focus {
+  border-color: #667eea;
+}
+
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 768px) {
   .summaryRow {

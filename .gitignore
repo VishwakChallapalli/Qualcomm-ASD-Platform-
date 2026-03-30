@@ -4,3 +4,4 @@ node_modules
 server/.env
 venv/
 emotion-server/venv/
+*.tsbuildinfo

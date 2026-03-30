@@ -218,18 +218,19 @@ app.get("/progress", async (req, res) => {
                 ...defaultGame(),
                 ...saved,
                 emotionTime: { ...defaultEmotionTime, ...(saved.emotionTime || {}) },
+                sessions: (saved.sessions || []).slice(-20),
             };
         };
 
         res.json({
-            ticTacToe:      mergeGame(gp.ticTacToe),
-            mathGame:       mergeGame(gp.mathGame),
+            ticTacToe: mergeGame(gp.ticTacToe),
+            mathGame: mergeGame(gp.mathGame),
             mirrorEmotions: mergeGame(gp.mirrorEmotions),
-            colorPattern:   mergeGame(gp.colorPattern),
-            neonRhythm:     mergeGame(gp.neonRhythm),
-            astralJump:     mergeGame(gp.astralJump),
+            colorPattern: mergeGame(gp.colorPattern),
+            neonRhythm: mergeGame(gp.neonRhythm),
+            astralJump: mergeGame(gp.astralJump),
             whatWouldYouDo: mergeGame(gp.whatWouldYouDo),
-            storyReader:    mergeGame(gp.storyReader),
+            storyReader: mergeGame(gp.storyReader),
         });
     } catch {
         return res.status(401).json({ message: "Invalid token" });
@@ -253,20 +254,35 @@ app.put("/updateProgress", async (req, res) => {
         const g = user.gameProgress[game];
 
         if (addTimePlayed) g.timePlayed = (g.timePlayed || 0) + addTimePlayed;
-        if (addWins)       g.wins       = (g.wins || 0)       + addWins;
+        if (addWins) g.wins = (g.wins || 0) + addWins;
         if (addComputerWins) g.computerWins = (g.computerWins || 0) + addComputerWins;
-        if (addTies)       g.ties       = (g.ties || 0)       + addTies;
+        if (addTies) g.ties = (g.ties || 0) + addTies;
         if (setScore !== undefined && setScore > (g.score || 0)) g.score = setScore;
-        if (addScore)      g.score      = (g.score || 0)      + addScore; // additive (e.g. stories completed)
+        if (addScore) g.score = (g.score || 0) + addScore; // additive (e.g. stories completed)
         if (setLevel !== undefined && setLevel > (g.level || 0)) g.level = setLevel;
 
         if (addEmotionTime && typeof addEmotionTime === "object") {
+            // DeepFace returns "surprise", "fear", "disgust" — normalize to schema keys
+            const EMOTION_KEY_MAP = { surprise: "surprised", fear: "fearful", disgust: "disgusted" };
+            const normalized = Object.fromEntries(
+                Object.entries(addEmotionTime).map(([k, v]) => [EMOTION_KEY_MAP[k] || k, v])
+            );
+
             if (!g.emotionTime) g.emotionTime = {};
-            for (const [emotion, seconds] of Object.entries(addEmotionTime)) {
+            for (const [emotion, seconds] of Object.entries(normalized)) {
                 if (typeof seconds === "number" && seconds > 0) {
                     g.emotionTime[emotion] = (g.emotionTime[emotion] || 0) + seconds;
                 }
             }
+            // Record this session individually for trend graphs
+            if (!g.sessions) g.sessions = [];
+            g.sessions.push({
+                date: new Date(),
+                timePlayed: addTimePlayed || 0,
+                emotionTime: { ...normalized },
+            });
+            // Keep only the last 20 sessions to cap document size
+            if (g.sessions.length > 20) g.sessions = g.sessions.slice(-20);
         }
 
         user.markModified("gameProgress");
