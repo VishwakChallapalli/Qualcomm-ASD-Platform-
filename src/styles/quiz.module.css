@@ -1,0 +1,327 @@
+.container {
+    width: 100%;
+    min-height: 100vh;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(950px 560px at 15% 18%, rgba(255, 65, 108, 0.55) 0%, rgba(255, 65, 108, 0) 62%),
+        radial-gradient(950px 560px at 85% 22%, rgba(72, 219, 251, 0.48) 0%, rgba(72, 219, 251, 0) 62%),
+        radial-gradient(980px 600px at 35% 88%, rgba(132, 94, 247, 0.46) 0%, rgba(132, 94, 247, 0) 62%),
+        radial-gradient(760px 460px at 78% 82%, rgba(255, 214, 10, 0.30) 0%, rgba(255, 214, 10, 0) 62%),
+        linear-gradient(135deg, #223a7a 0%, #1a4f7a 45%, #2a2d86 100%);
+    color: white;
+    overflow: hidden; /* app-level body scrolling is disabled; scroll inside content */
+}
+
+.header {
+    padding: clamp(3.4rem, 6.5vh, 4.6rem) 1.25rem 0.75rem;
+    text-align: center;
+}
+
+.title {
+    font-size: clamp(2rem, 3.2vw, 2.6rem);
+    font-weight: bold;
+    margin: 0 0 0.85rem 0;
+    background: linear-gradient(90deg, #7ee8fa 0%, #eec0ff 45%, #fbd786 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    margin: 0.5rem 0 1rem;
+    opacity: 0.9;
+    color: #00d4ff;
+}
+
+.scoreBadge {
+    display: inline-block;
+    padding: 0.45rem 1.1rem;
+    margin-top: 0.4rem;
+    background: linear-gradient(135deg, rgba(72, 219, 251, 0.22), rgba(255, 65, 108, 0.16));
+    border: 2px solid rgba(126, 232, 250, 0.85);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.content {
+    flex: 1;
+    padding: 0.9rem 1.25rem 1.1rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    overflow: hidden; /* user requested no scrolling */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.startSection {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.startText {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.startButton {
+    padding: 1rem 2.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    border: none;
+    background: linear-gradient(180deg, #7ee8fa 0%, #48dbfb 100%);
+    color: #0b1026;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.startButton:hover:not(:disabled) {
+    filter: brightness(1.03);
+    transform: translateY(-1px);
+}
+
+.startButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.demoToggle {
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.demoToggle label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    opacity: 0.9;
+}
+
+.quizArea {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    padding: 1.25rem 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(10px);
+}
+
+.messages {
+    margin-bottom: 0.6rem;
+}
+
+.assistantMessage {
+    white-space: pre-wrap;
+    font-family: inherit;
+    line-height: 1.6;
+}
+
+.messagePre {
+    margin: 0;
+    font-family: inherit;
+    white-space: pre-wrap;
+    font-size: clamp(1.05rem, 1.6vw + 0.6rem, 1.35rem);
+    line-height: clamp(1.6rem, 2.2vw + 0.6rem, 2.05rem);
+    letter-spacing: 0.2px;
+    text-align: left;
+}
+
+.ttsRow {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.ttsButton {
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.30);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.10));
+    color: white;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.ttsButton:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.14));
+    transform: translateY(-1px);
+}
+
+.ttsButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wordToken {
+    border-radius: 6px;
+    padding: 0 2px;
+}
+
+.wordSpoken {
+    background: rgba(255, 214, 10, 0.22);
+    box-shadow: 0 0 0 2px rgba(255, 214, 10, 0.32);
+}
+
+.quizLine {
+    margin: 0.25rem 0;
+}
+
+.quizSpacer {
+    height: 0.9rem;
+}
+
+.sectionLabel {
+    margin-top: 0.5rem;
+    margin-bottom: 0.15rem;
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.questionBlock {
+    font-size: clamp(1.15rem, 1.9vw + 0.5rem, 1.55rem);
+    line-height: clamp(1.7rem, 2.3vw + 0.6rem, 2.15rem);
+    margin-bottom: 0.35rem;
+}
+
+.optionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.optionLine {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.1rem 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+}
+
+.optionBadge {
+    width: 2.1rem;
+    text-align: center;
+    font-weight: 900;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+/* Give each option letter its own color */
+.optionLine:nth-child(1) .optionBadge { color: #a8e6ff; }
+.optionLine:nth-child(2) .optionBadge { color: #cbb6ff; }
+.optionLine:nth-child(3) .optionBadge { color: #ffe3a3; }
+.optionLine:nth-child(4) .optionBadge { color: #ffb3c7; }
+
+.optionText {
+    flex: 1;
+    font-size: clamp(1.05rem, 1.5vw + 0.55rem, 1.35rem);
+    line-height: clamp(1.55rem, 2vw + 0.55rem, 2.0rem);
+}
+
+.optionsRow {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    justify-content: center; /* center A/B/C/D buttons */
+}
+
+.optionButton {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid rgba(126, 232, 250, 0.75);
+    background: linear-gradient(180deg, #7ee8fa 0%, #48dbfb 100%);
+    color: #0b1026;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.optionButton:hover:not(:disabled) {
+    filter: brightness(1.03);
+    border-color: rgba(126, 232, 250, 0.9);
+    transform: translateY(-1px);
+}
+
+.optionButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.error {
+    color: #ff6b9d;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 107, 157, 0.15);
+    border-radius: 8px;
+}
+
+.navBar {
+    padding: 1rem 2rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navButton {
+    padding: 0.6rem 1.2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.navButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.leaderboardLink {
+    padding: 0.6rem 1.2rem;
+    background: rgba(0, 212, 255, 0.2);
+    border: 2px solid #00d4ff;
+    border-radius: 8px;
+    color: #00d4ff;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.leaderboardLink:hover {
+    background: rgba(0, 212, 255, 0.3);
+}

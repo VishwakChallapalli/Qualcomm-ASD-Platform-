@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/story-reader.module.css';
+import { sessionHeaders } from '@/lib/session';
 
 const WHISPER_URL   = 'http://127.0.0.1:5051';
 const EMOTION_URL   = 'http://127.0.0.1:5050/emotion';
@@ -12,7 +13,7 @@ async function updateProgress(payload: Record<string, unknown>) {
   try {
     await fetch(API_PROGRESS, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
       body: JSON.stringify({ game: 'storyReader', ...payload }),
     });
   } catch { /* silent — offline */ }
@@ -121,6 +122,8 @@ export default function StoryReaderPage() {
   const [words, setWords] = useState<Word[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [statuses, setStatuses] = useState<WordStatus[]>([]);
+  const [spokenIdx, setSpokenIdx] = useState<number | null>(null); // TTS highlight
+  const [ttsStatus, setTtsStatus] = useState<'idle' | 'playing' | 'paused'>('idle');
   const [micState, setMicState] = useState<MicState>('off');
   const [whisperOnline, setWhisperOnline] = useState<boolean | null>(null);
   const [micError, setMicError] = useState('');
@@ -149,6 +152,13 @@ export default function StoryReaderPage() {
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processingRef = useRef(false);
 
+  // TTS refs
+  const ttsBoundaryCountRef = useRef(0);
+  const ttsFallbackRef = useRef(false);
+  const ttsFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ttsSeqCancelRef = useRef(false);
+  const wordStartsRef = useRef<number[]>([]);
+
   // Keep refs in sync
   useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);
   useEffect(() => { wordsRef.current = words; }, [words]);
@@ -169,8 +179,137 @@ export default function StoryReaderPage() {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (audioCtxRef.current?.state !== 'closed') audioCtxRef.current?.close();
+      // stop TTS
+      try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     };
   }, []);
+
+  const ttsSupported =
+    typeof window !== 'undefined' &&
+    typeof window.speechSynthesis !== 'undefined' &&
+    typeof (window as any).SpeechSynthesisUtterance !== 'undefined';
+
+  const stopTts = useCallback(() => {
+    if (!ttsSupported) return;
+    try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
+    if (ttsFallbackTimerRef.current) clearTimeout(ttsFallbackTimerRef.current);
+    ttsFallbackTimerRef.current = null;
+    ttsSeqCancelRef.current = true;
+    ttsFallbackRef.current = false;
+    ttsBoundaryCountRef.current = 0;
+    setTtsStatus('idle');
+    setSpokenIdx(null);
+  }, [ttsSupported]);
+
+  const pauseTts = useCallback(() => {
+    if (!ttsSupported) return;
+    try { window.speechSynthesis.pause(); } catch { /* ignore */ }
+    setTtsStatus('paused');
+  }, [ttsSupported]);
+
+  const resumeTts = useCallback(() => {
+    if (!ttsSupported) return;
+    try { window.speechSynthesis.resume(); } catch { /* ignore */ }
+    setTtsStatus('playing');
+  }, [ttsSupported]);
+
+  const computeWordStarts = useCallback((ws: Word[]) => {
+    // Build the exact TTS string we speak so indices align.
+    const starts: number[] = [];
+    let pos = 0;
+    for (let i = 0; i < ws.length; i++) {
+      starts.push(pos);
+      pos += ws[i].raw.length + 1; // + space
+    }
+    wordStartsRef.current = starts;
+  }, []);
+
+  const findWordIndexByChar = useCallback((charIndex: number) => {
+    const starts = wordStartsRef.current;
+    if (!starts.length) return 0;
+    let lo = 0, hi = starts.length - 1, ans = 0;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (starts[mid] <= charIndex) { ans = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    return ans;
+  }, []);
+
+  const speakWordsSequentially = useCallback((ws: Word[], startIdx: number) => {
+    if (!ttsSupported) return;
+    ttsSeqCancelRef.current = false;
+    ttsFallbackRef.current = true;
+    setTtsStatus('playing');
+
+    const speakAt = (i: number) => {
+      if (ttsSeqCancelRef.current) return;
+      if (i >= ws.length) {
+        setTtsStatus('idle');
+        setSpokenIdx(null);
+        return;
+      }
+      const u = new (window as any).SpeechSynthesisUtterance(ws[i].raw);
+      u.rate = 0.95;
+      u.pitch = 1;
+      u.onstart = () => setSpokenIdx(i);
+      u.onend = () => speakAt(i + 1);
+      u.onerror = () => {
+        // stop gracefully
+        setTtsStatus('idle');
+        setSpokenIdx(null);
+      };
+      try { window.speechSynthesis.speak(u); } catch { /* ignore */ }
+    };
+
+    speakAt(startIdx);
+  }, [ttsSupported]);
+
+  const speakStory = useCallback(() => {
+    if (!ttsSupported) return;
+    const ws = wordsRef.current;
+    if (!ws.length) return;
+
+    stopTts();
+    ttsBoundaryCountRef.current = 0;
+    ttsFallbackRef.current = false;
+    computeWordStarts(ws);
+
+    const text = ws.map(w => w.raw).join(' ');
+    const u = new (window as any).SpeechSynthesisUtterance(text);
+    u.rate = 0.95;
+    u.pitch = 1;
+    u.onstart = () => {
+      setTtsStatus('playing');
+      setSpokenIdx(0);
+    };
+    u.onboundary = (e: any) => {
+      // Some browsers don't fire word boundaries consistently; we detect that and fallback.
+      if (typeof e?.charIndex === 'number') {
+        ttsBoundaryCountRef.current += 1;
+        const idx = findWordIndexByChar(e.charIndex);
+        setSpokenIdx(idx);
+      }
+    };
+    u.onend = () => {
+      setTtsStatus('idle');
+      setSpokenIdx(null);
+    };
+    u.onerror = () => {
+      setTtsStatus('idle');
+      setSpokenIdx(null);
+    };
+
+    try { window.speechSynthesis.speak(u); } catch { /* ignore */ }
+
+    // If we don't get any boundary events quickly, switch to a reliable word-by-word fallback.
+    if (ttsFallbackTimerRef.current) clearTimeout(ttsFallbackTimerRef.current);
+    ttsFallbackTimerRef.current = setTimeout(() => {
+      if (ttsBoundaryCountRef.current > 0) return;
+      try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
+      speakWordsSequentially(ws, 0);
+    }, 1200);
+  }, [computeWordStarts, findWordIndexByChar, speakWordsSequentially, stopTts, ttsSupported]);
 
   // ── Emotion polling (every 2 s) ────────────────────────────────────────────
   useEffect(() => {
@@ -242,6 +381,7 @@ export default function StoryReaderPage() {
   // ── Start game ─────────────────────────────────────────────────────────────
   const startGame = useCallback((s: Story) => {
     stopAudio();
+    stopTts();
 
     // Reset per-round tracking
     sessionStartRef.current  = Date.now();
@@ -256,6 +396,8 @@ export default function StoryReaderPage() {
     currentIdxRef.current = 0;
     setStatuses(new Array(parsed.length).fill('idle'));
     setMicError('');
+    setSpokenIdx(null);
+    setTtsStatus('idle');
     setPhase('playing');
     phaseRef.current = 'playing';
 
@@ -498,14 +640,34 @@ export default function StoryReaderPage() {
       <header className={styles.gameHeader}>
         <button
           className={styles.smallBtn}
-          onClick={() => { stopAudio(); setPhase('select'); setMicState('off'); }}
+          onClick={() => { stopAudio(); stopTts(); setPhase('select'); setMicState('off'); }}
         >
           ← Back
         </button>
         <span className={styles.gameTitle}>{story.emoji} {story.title}</span>
-        <button className={styles.smallBtn} onClick={skipWord}>
-          Skip Word
-        </button>
+        <div className={styles.ttsControls}>
+          <button className={styles.smallBtn} onClick={speakStory} disabled={!ttsSupported || ttsStatus === 'playing'}>
+            🔊 Read
+          </button>
+          {ttsStatus === 'playing' && (
+            <button className={styles.smallBtn} onClick={pauseTts} disabled={!ttsSupported}>
+              Pause
+            </button>
+          )}
+          {ttsStatus === 'paused' && (
+            <button className={styles.smallBtn} onClick={resumeTts} disabled={!ttsSupported}>
+              Resume
+            </button>
+          )}
+          {ttsStatus !== 'idle' && (
+            <button className={styles.smallBtn} onClick={stopTts} disabled={!ttsSupported}>
+              Stop
+            </button>
+          )}
+          <button className={styles.smallBtn} onClick={skipWord}>
+            Skip Word
+          </button>
+        </div>
       </header>
 
       <div className={styles.progressBar}>
@@ -530,6 +692,7 @@ export default function StoryReaderPage() {
               onClick={() => handleWordTap(idx)}
               className={[
                 styles.word,
+                idx === spokenIdx           ? styles.wordSpoken  : '',
                 idx === currentIdx          ? styles.wordActive  : '',
                 statuses[idx] === 'correct' ? styles.wordCorrect : '',
                 statuses[idx] === 'wrong'   ? styles.wordWrong   : '',

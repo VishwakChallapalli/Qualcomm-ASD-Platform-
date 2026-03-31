@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '@/styles/page4.module.css';
+import { sessionHeaders } from '@/lib/session';
 
 // Avatar options to match what was selected
 const avatarOptions = [
@@ -102,7 +103,7 @@ export default function Page4() {
 
   useEffect(() => {
     async function getUserInfo() {
-      const res = await fetch('/api/me');
+      const res = await fetch('/api/me', { headers: sessionHeaders() });
       const data = await res.json();
       if (data.avatarId) setSelectedAvatar(data.avatarId);
       else setSelectedAvatar(1);
@@ -318,6 +319,8 @@ export default function Page4() {
                         <Link href="/games/mirror-emotions" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : game.id === 4 ? (
                         <Link href="/games/color-pattern-game" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
+                      ) : game.id === 5 ? (
+                        <Link href="/quiz-ai" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : game.id === 6 ? (
                         <Link href="/games/neon-rhythm" className={styles.playButton} style={{ borderColor: game.color, color: game.color }}>Play →</Link>
                       ) : game.id === 7 ? (

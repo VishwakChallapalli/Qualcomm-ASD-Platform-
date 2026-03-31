@@ -171,6 +171,13 @@
   color: rgba(255,255,255,0.9);
 }
 
+/* ── TTS Controls ──────────────────────────────────────────────── */
+.ttsControls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 /* ── Progress Bar ──────────────────────────────────────────────── */
 .progressBar {
   height: 4px;
@@ -247,6 +254,15 @@
   padding: 3px 8px;
   cursor: pointer;
   animation: breathe 2.2s ease-in-out infinite;
+}
+
+/* Word currently being spoken by TTS */
+.wordSpoken {
+  color: #ffffff !important;
+  background: rgba(56, 189, 248, 0.18);
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.35),
+    0 0 18px rgba(56, 189, 248, 0.22);
 }
 
 /* Correctly spoken word */
