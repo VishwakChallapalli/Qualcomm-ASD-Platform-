@@ -45,3 +45,31 @@ def speak_text(text, async_mode=False):
         if engine:
             engine.say(text)
             engine.runAndWait()
+
+def save_speech_to_file(text, filename="tts_output.wav"):
+    """
+    Save the spoken text to an audio file instead of playing it.
+    """
+    engine = get_tts_engine()
+    if not engine:
+        return False
+        
+    try:
+        engine.save_to_file(text, filename)
+        engine.runAndWait()
+        print(f"Saved speech to {filename}")
+        return True
+    except Exception as e:
+        print(f"Error saving speech to file: {e}")
+        return False
+
+def show_available_voices():
+    """Prints a list of available voices on the local system."""
+    engine = get_tts_engine()
+    if not engine:
+        return
+
+    voices = engine.getProperty('voices')
+    print(f"Found {len(voices)} available voices on this device:")
+    for i, voice in enumerate(voices):
+        print(f"Voice {i + 1}: {voice.name}")
