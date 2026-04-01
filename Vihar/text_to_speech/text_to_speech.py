@@ -73,3 +73,31 @@ def show_available_voices():
     print(f"Found {len(voices)} available voices on this device:")
     for i, voice in enumerate(voices):
         print(f"Voice {i + 1}: {voice.name}")
+
+def main():
+    print("====================================")
+    print("Welcome to the Text-to-Speech Module")
+    print("====================================")
+    print("This module uses native OS synthesis and is fully compatible with Snapdragon X Elite.\n")
+    
+    test_phrase = "Hello! I am the new text to speech feature. I am ready to be used in your game."
+    
+    print(f"Speaking: '{test_phrase}'")
+    speak_text(test_phrase, async_mode=False)
+    
+    print("\nDemonstrating background 'async' speech...")
+    speak_text("This text is spoken in the background and does not block the application.", async_mode=True)
+    
+    print("As you can see, the application continues to run while background audio plays!")
+    
+    print("\nSaving a sample phrase to a file...")
+    save_speech_to_file("This phrase was generated and saved safely.", "sample_output.wav")
+    
+    # Wait for the async speaking thread to finish demo
+    import time
+    time.sleep(3)
+    
+    print("\nText-to-Speech test completed successfully.")
+
+if __name__ == "__main__":
+    main()
