@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/tic-tac-toe.module.css';
+import { sessionHeaders } from '@/lib/session';
 
 type Player = 'X' | 'O' | null;
 type Board = Player[];
@@ -13,7 +14,7 @@ const EMOTION_SERVER = 'http://127.0.0.1:5050/emotion';
 function updateProgress(payload: Record<string, unknown>) {
   fetch('/api/updateProgress', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
     body: JSON.stringify(payload),
     keepalive: true,
   }).catch(() => {});
@@ -32,7 +33,7 @@ export default function TicTacToePage() {
 
   useEffect(() => {
     // Load cumulative scores from DB
-    fetch('/api/progress')
+    fetch('/api/progress', { headers: sessionHeaders() })
       .then((r) => r.json())
       .then((data) => {
         if (data.ticTacToe) {

@@ -16,7 +16,7 @@ export default function Page1() {
 
       {/* Enter button at the bottom */}
       <div className={styles.enterButtonContainer}>
-        <Link href="/signup" className={styles.enterButton}>
+        <Link href="/page4" className={styles.enterButton}>
           Enter
         </Link>
       </div>

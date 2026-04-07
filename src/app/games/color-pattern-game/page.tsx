@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import styles from '@/styles/ColorPatternPage.module.css';
 import Link from 'next/link';
+import { sessionHeaders } from '@/lib/session';
 
 type Color = 'red' | 'green' | 'yellow' | 'blue';
 
@@ -11,7 +12,7 @@ const EMOTION_SERVER = 'http://127.0.0.1:5050/emotion';
 function updateProgress(payload: Record<string, unknown>) {
   fetch('/api/updateProgress', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
     body: JSON.stringify(payload),
     keepalive: true,
   }).catch(() => {});

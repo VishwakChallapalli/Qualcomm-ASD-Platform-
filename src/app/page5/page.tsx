@@ -6,6 +6,7 @@ import styles from '@/styles/page5.module.css';
 import ThemeToggle from '@/components/ThemeToggle';
 import EmotionMonitor from '@/components/EmotionMonitor';
 import EmotionLineChart, { Session } from '@/components/EmotionLineChart';
+import { sessionHeaders } from '@/lib/session';
 
 const avatarOptions = [
   { id: 1, name: 'Alex', baseColor: '#4a90e2', emoji: '🤖' },
@@ -77,7 +78,7 @@ export default function Page5() {
 
   useEffect(() => {
     async function loadAllData() {
-      const meRes = await fetch('/api/me').catch(() => null);
+      const meRes = await fetch('/api/me', { headers: sessionHeaders() }).catch(() => null);
       if (meRes?.ok) {
         const me = await meRes.json();
         if (me.avatarId)    setSelectedAvatar(me.avatarId);
@@ -85,7 +86,7 @@ export default function Page5() {
         if (me.accountName) setUserName(me.accountName);
       }
 
-      const progRes = await fetch('/api/progress').catch(() => null);
+      const progRes = await fetch('/api/progress', { headers: sessionHeaders() }).catch(() => null);
       if (progRes?.ok) {
         const prog = await progRes.json();
         if (prog.ticTacToe)     setTicTacToe(parseStats(prog.ticTacToe));
@@ -123,6 +124,9 @@ export default function Page5() {
   const allStats = [ticTacToe, mathGame, mirrorEmotions, colorPattern, neonRhythm, astralJump, whatWouldYouDo, storyReader];
   const totalTimePlayed = allStats.reduce((sum, g) => sum + g.timePlayed, 0);
   const totalWins       = allStats.reduce((sum, g) => sum + g.wins, 0);
+
+  const isPlayed = (g: GameStats) =>
+    (g.timePlayed || 0) > 0 || (g.wins || 0) > 0 || (g.score || 0) > 0 || (g.sessions?.length || 0) > 0;
 
   const games = [
     {
@@ -196,7 +200,7 @@ export default function Page5() {
       name: 'What Would You Do?',
       emoji: '🤔',
       color: '#10b981',
-      href: null,
+      href: '/quiz-ai',
       stats: whatWouldYouDo,
       winLabel: 'Correct Choices',
       scoreLabel: 'Total Score',
@@ -290,7 +294,7 @@ export default function Page5() {
         <div className={styles.summaryCard}>
           <span className={styles.summaryIcon}>🎮</span>
           <div>
-            <p className={styles.summaryValue}>{allStats.filter(g => g.timePlayed > 0).length}</p>
+            <p className={styles.summaryValue}>{allStats.filter(isPlayed).length}</p>
             <p className={styles.summaryLabel}>Games Played</p>
           </div>
         </div>
@@ -308,7 +312,7 @@ export default function Page5() {
           neonRhythm: 'Neon Rhythm', astralJump: 'Astral Jump',
           whatWouldYouDo: 'What Would You Do?', storyReader: 'Story Reader',
         };
-        const playedGames = Object.keys(gameKeyMap).filter(k => gameKeyMap[k].timePlayed > 0);
+        const playedGames = Object.keys(gameKeyMap).filter(k => isPlayed(gameKeyMap[k]));
         const trendSessions = gameKeyMap[selectedTrendGame]?.sessions ?? [];
         return (
           <div className={styles.trendsSection}>
@@ -336,7 +340,7 @@ export default function Page5() {
         <h2 className={styles.sectionTitle}>Game Breakdown</h2>
         <div className={styles.gameCards}>
           {games.map((game) => {
-            const played = game.stats.timePlayed > 0;
+            const played = isPlayed(game.stats);
             const emotionData = game.stats.emotionTime || {};
             const totalEmotionTime = EMOTION_CONFIG.reduce((sum, e) => sum + (emotionData[e.key] || 0), 0);
 
