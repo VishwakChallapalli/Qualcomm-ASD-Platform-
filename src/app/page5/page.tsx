@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/styles/page5.module.css';
+import ThemeToggle from '@/components/ThemeToggle';
 import EmotionMonitor from '@/components/EmotionMonitor';
 import EmotionLineChart, { Session } from '@/components/EmotionLineChart';
 
@@ -244,6 +245,7 @@ export default function Page5() {
         </div>
         <div className={styles.headerRight}>
           <Link href="/page4" className={styles.backLink}>← Back to Dashboard</Link>
+          <ThemeToggle />
           <div className={styles.userDropdown}>
             <div
               className={styles.userAvatarSmall}

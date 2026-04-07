@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '@/styles/page4.module.css';
+import ThemeToggle from '@/components/ThemeToggle';
 
 // Avatar options to match what was selected
 const avatarOptions = [
@@ -235,6 +236,7 @@ export default function Page4() {
             )}
             <span className={styles.userName}>{userName}</span>
           </div>
+          <ThemeToggle />
           <button className={styles.logoutButton} onClick={handleLogout}>
             Log Out
           </button>

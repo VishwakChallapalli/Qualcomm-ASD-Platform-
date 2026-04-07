@@ -543,6 +543,46 @@
   border-color: #667eea;
 }
 
+/* ══════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ══════════════════════════════════════════════════ */
+:global([data-theme="dark"]) .container            { background: var(--bg); color: var(--text-primary); }
+:global([data-theme="dark"]) .topHeader            { background: var(--surface); border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+:global([data-theme="dark"]) .exploreButton        { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
+:global([data-theme="dark"]) .exploreButton:hover  { background: var(--hover-bg); }
+:global([data-theme="dark"]) .dropdownMenu         { background: var(--surface); border-color: var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+:global([data-theme="dark"]) .dropdownSectionTitle { color: var(--text-muted); }
+:global([data-theme="dark"]) .dropdownItem         { color: var(--text-primary); }
+:global([data-theme="dark"]) .dropdownItem:hover   { background: var(--hover-bg); }
+:global([data-theme="dark"]) .searchContainer      { background: var(--input-bg); border-color: var(--border); }
+:global([data-theme="dark"]) .searchInput          { color: var(--text-primary); }
+:global([data-theme="dark"]) .userDropdown         { background: rgba(0,188,212,0.06); }
+:global([data-theme="dark"]) .userName             { color: var(--text-primary); }
+:global([data-theme="dark"]) .summaryCard          { background: var(--surface); border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+:global([data-theme="dark"]) .summaryValue         { color: var(--text-primary); }
+:global([data-theme="dark"]) .summaryLabel         { color: var(--text-secondary); }
+:global([data-theme="dark"]) .sectionTitle         { color: var(--text-primary); }
+:global([data-theme="dark"]) .gameCard             { background: var(--surface); border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+:global([data-theme="dark"]) .gameCard:hover       { box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+:global([data-theme="dark"]) .gameName             { color: var(--text-primary); }
+:global([data-theme="dark"]) .notPlayedBadge       { color: var(--text-muted); }
+:global([data-theme="dark"]) .gameStats            { background: var(--stat-bg); border-color: var(--border); }
+:global([data-theme="dark"]) .statDivider          { background: var(--border); }
+:global([data-theme="dark"]) .statValue            { color: var(--text-primary); }
+:global([data-theme="dark"]) .statLabel            { color: var(--text-secondary); }
+:global([data-theme="dark"]) .timeBarTrack         { background: var(--border); }
+:global([data-theme="dark"]) .timeBarPct           { color: var(--text-muted); }
+:global([data-theme="dark"]) .comingSoonBadge      { background: var(--surface2); color: var(--text-muted); }
+:global([data-theme="dark"]) .emotionSection       { border-color: var(--border); }
+:global([data-theme="dark"]) .emotionSectionTitle  { color: var(--text-secondary); }
+:global([data-theme="dark"]) .emotionNoData        { color: var(--text-muted); }
+:global([data-theme="dark"]) .emotionLabel         { color: var(--text-primary); }
+:global([data-theme="dark"]) .emotionBarTrack      { background: var(--border); }
+:global([data-theme="dark"]) .emotionTime          { color: var(--text-secondary); }
+:global([data-theme="dark"]) .emotionPct           { color: var(--text-muted); }
+:global([data-theme="dark"]) .trendsSection        { background: var(--surface); border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+:global([data-theme="dark"]) .gameSelector         { background: var(--input-bg); border-color: var(--border); color: var(--text-primary); }
+
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 768px) {
   .summaryRow {

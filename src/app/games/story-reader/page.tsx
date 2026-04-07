@@ -124,7 +124,8 @@ export default function StoryReaderPage() {
   const [micState, setMicState] = useState<MicState>('off');
   const [whisperOnline, setWhisperOnline] = useState<boolean | null>(null);
   const [micError, setMicError] = useState('');
-  const [micVolume, setMicVolume] = useState(0); // 0–100 live volume level
+  const [micVolume, setMicVolume] = useState(0);   // 0–100 live volume level
+  const [lastHeard, setLastHeard] = useState('');  // last Whisper transcription
 
   // Refs so async callbacks always see latest values without stale closures
   const currentIdxRef = useRef(0);
@@ -147,7 +148,9 @@ export default function StoryReaderPage() {
   const isRecordingRef = useRef(false);
   const speechActiveRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const processingRef = useRef(false);
+  const processingRef   = useRef(false);
+  const pendingBlobRef  = useRef<Blob | null>(null); // recording queued while processing
+  const mimeTypeRef     = useRef('audio/webm');
 
   // Keep refs in sync
   useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);
@@ -237,6 +240,7 @@ export default function StoryReaderPage() {
     isRecordingRef.current = false;
     speechActiveRef.current = false;
     processingRef.current = false;
+    pendingBlobRef.current = null;
   }, []);
 
   // ── Start game ─────────────────────────────────────────────────────────────
@@ -278,6 +282,7 @@ export default function StoryReaderPage() {
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : 'audio/webm';
+        mimeTypeRef.current = mimeType;
 
         const recorder = new MediaRecorder(stream, { mimeType });
 
@@ -285,20 +290,11 @@ export default function StoryReaderPage() {
           if (e.data.size > 0) chunksRef.current.push(e.data);
         };
 
-        // ── Handle finished recording → send to Whisper ──────────────────────
-        recorder.onstop = async () => {
-          if (processingRef.current || phaseRef.current !== 'playing') return;
-
-          const blob = new Blob(chunksRef.current, { type: mimeType });
-          // Ignore truly empty blobs (header-only with no audio data)
-          if (blob.size < 100) {
-            setMicState('listening');
-            return;
-          }
-
+        // ── Send blob to Whisper and evaluate result ──────────────────────────
+        async function processBlob(blob: Blob) {
+          if (phaseRef.current !== 'playing') return;
           processingRef.current = true;
           setMicState('processing');
-
           try {
             const form = new FormData();
             form.append('audio', blob, 'speech.webm');
@@ -310,15 +306,16 @@ export default function StoryReaderPage() {
             const data = await res.json();
 
             if (data.ok && data.text) {
+              const text = data.text.trim();
+              setLastHeard(text); // show what was heard
               const idx = currentIdxRef.current;
-              const ws = wordsRef.current;
+              const ws  = wordsRef.current;
               if (!ws[idx]) return;
 
-              if (wordMatches(data.text, ws[idx].clean)) {
-                // ✅ Correct
+              if (wordMatches(text, ws[idx].clean)) {
                 advanceWord(idx);
               } else {
-                // ❌ Wrong — shake red then reset
+                // ❌ Wrong — shake red then reset to idle
                 setStatuses(prev => { const n = [...prev]; n[idx] = 'wrong'; return n; });
                 setTimeout(() => {
                   setStatuses(prev => {
@@ -330,11 +327,37 @@ export default function StoryReaderPage() {
               }
             }
           } catch {
-            // Whisper server offline or timed out — silent fail, user can tap word
+            // Whisper timed out or offline — user can tap word to advance
           } finally {
             processingRef.current = false;
             setMicState('listening');
+            // If a recording finished while we were busy, process it now
+            if (pendingBlobRef.current) {
+              const queued = pendingBlobRef.current;
+              pendingBlobRef.current = null;
+              await processBlob(queued);
+            }
           }
+        }
+
+        // ── Handle finished recording → send to Whisper ──────────────────────
+        recorder.onstop = async () => {
+          if (phaseRef.current !== 'playing') return;
+
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          // Ignore header-only blobs (no actual audio)
+          if (blob.size < 100) {
+            setMicState('listening');
+            return;
+          }
+
+          if (processingRef.current) {
+            // Don't drop it — queue it for after current processing finishes
+            pendingBlobRef.current = blob;
+            return;
+          }
+
+          await processBlob(blob);
         };
 
         recorderRef.current = recorder;
@@ -366,9 +389,10 @@ export default function StoryReaderPage() {
             }
             speechActiveRef.current = true;
 
+            // Start recording even if Whisper is still processing the previous
+            // word — the finished blob will be queued and processed next.
             if (
               !isRecordingRef.current &&
-              !processingRef.current &&
               recorderRef.current?.state === 'inactive'
             ) {
               chunksRef.current = [];
@@ -540,6 +564,11 @@ export default function StoryReaderPage() {
           ))}
         </p>
       </div>
+
+      {/* Last heard — helps diagnose matching issues */}
+      {lastHeard ? (
+        <p className={styles.lastHeard}>heard: &ldquo;{lastHeard}&rdquo;</p>
+      ) : null}
 
       {/* Mic status bar */}
       <div className={styles.micBar}>

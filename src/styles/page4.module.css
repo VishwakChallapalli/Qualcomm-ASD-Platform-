@@ -965,3 +965,62 @@
 .saveButton.saveButtonDone {
   background: #38a169;
 }
+
+/* ══════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ══════════════════════════════════════════════════ */
+:global([data-theme="dark"]) .container           { background: var(--bg); }
+:global([data-theme="dark"]) .topHeader           { background: var(--surface); border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+:global([data-theme="dark"]) .exploreButton       { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
+:global([data-theme="dark"]) .exploreButton:hover { background: var(--hover-bg); }
+:global([data-theme="dark"]) .dropdownMenu        { background: var(--surface); border-color: var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+:global([data-theme="dark"]) .dropdownSectionTitle{ color: var(--text-muted); }
+:global([data-theme="dark"]) .dropdownItem        { color: var(--text-primary); }
+:global([data-theme="dark"]) .dropdownItem:hover  { background: var(--hover-bg); }
+:global([data-theme="dark"]) .dropdownSection:not(:last-child) { border-color: var(--border); }
+:global([data-theme="dark"]) .searchContainer     { background: var(--input-bg); border-color: var(--border); }
+:global([data-theme="dark"]) .searchInput         { color: var(--text-primary); }
+:global([data-theme="dark"]) .searchInput::placeholder { color: var(--text-muted); }
+:global([data-theme="dark"]) .searchIcon          { color: var(--text-secondary); }
+:global([data-theme="dark"]) .userName            { color: var(--text-primary); }
+:global([data-theme="dark"]) .userDropdown:hover  { background: var(--hover-bg); }
+:global([data-theme="dark"]) .logoutButton        { background: var(--surface); border-color: var(--border); }
+:global([data-theme="dark"]) .streakBar           { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
+:global([data-theme="dark"]) .progressBar         { background: var(--border); }
+:global([data-theme="dark"]) .sidebar             { background: var(--surface); border-color: var(--border); }
+:global([data-theme="dark"]) .profileSection      { border-color: var(--border); }
+:global([data-theme="dark"]) .profileName         { color: var(--text-primary); }
+:global([data-theme="dark"]) .profileBio          { color: var(--text-secondary); }
+:global([data-theme="dark"]) .editProfileButton   { background: var(--surface); }
+:global([data-theme="dark"]) .badge               { background: var(--surface2); border-color: var(--border); }
+:global([data-theme="dark"]) .navSectionTitle     { color: var(--text-muted); }
+:global([data-theme="dark"]) .navLink             { color: var(--text-secondary); }
+:global([data-theme="dark"]) .navLink:hover       { background: var(--hover-bg); color: var(--text-primary); }
+:global([data-theme="dark"]) .mainContent         { background: var(--surface2); }
+:global([data-theme="dark"]) .contentTitle        { color: var(--text-primary); }
+:global([data-theme="dark"]) .editCoursesButton   { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
+:global([data-theme="dark"]) .editCoursesButton:hover { background: var(--hover-bg); }
+:global([data-theme="dark"]) .courseSubtitle      { color: var(--text-primary); }
+:global([data-theme="dark"]) .courseItem          { background: var(--surface2); border-color: var(--border); color: var(--text-primary); }
+:global([data-theme="dark"]) .courseItem:hover    { background: var(--hover-bg); }
+:global([data-theme="dark"]) .courseName          { color: var(--text-primary); }
+:global([data-theme="dark"]) .addCourseSection    { border-color: var(--border); }
+:global([data-theme="dark"]) .addCourseSection:hover { background: var(--hover-bg); border-color: #667eea; }
+:global([data-theme="dark"]) .addCourseBox        { background: var(--surface2); border-color: var(--border); }
+:global([data-theme="dark"]) .addCourseText       { color: var(--text-secondary); }
+:global([data-theme="dark"]) .gameCard            { background: var(--surface); border-color: var(--border); }
+:global([data-theme="dark"]) .gameCard:hover      { box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+:global([data-theme="dark"]) .gameName            { color: var(--text-primary); }
+:global([data-theme="dark"]) .gameDescription     { color: var(--text-secondary); }
+:global([data-theme="dark"]) .modalCard           { background: var(--surface); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+:global([data-theme="dark"]) .modalTitle          { color: var(--text-primary); }
+:global([data-theme="dark"]) .modalClose          { color: var(--text-muted); }
+:global([data-theme="dark"]) .modalClose:hover    { background: var(--hover-bg); color: var(--text-primary); }
+:global([data-theme="dark"]) .editPreview         { background: var(--surface2); }
+:global([data-theme="dark"]) .editPreviewName     { color: var(--text-primary); }
+:global([data-theme="dark"]) .editLabel           { color: var(--text-secondary); }
+:global([data-theme="dark"]) .editInput           { background: var(--input-bg); border-color: var(--border); color: var(--text-primary); }
+:global([data-theme="dark"]) .editAvatarCard      { background: var(--surface2); border-color: var(--border); }
+:global([data-theme="dark"]) .editAvatarCard:hover { border-color: #00d4ff; background: rgba(0,212,255,0.06); }
+:global([data-theme="dark"]) .editAvatarName      { color: var(--text-secondary); }
+:global([data-theme="dark"]) .saveError           { background: rgba(229,62,62,0.12); }
