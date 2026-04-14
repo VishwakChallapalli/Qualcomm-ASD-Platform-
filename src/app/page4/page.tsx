@@ -105,6 +105,10 @@ export default function Page4() {
   useEffect(() => {
     async function getUserInfo() {
       const res = await fetch('/api/me', { headers: sessionHeaders() });
+      if (res.status === 401) {
+        router.replace('/login');
+        return;
+      }
       const data = await res.json();
       if (data.avatarId) setSelectedAvatar(data.avatarId);
       else setSelectedAvatar(1);
@@ -113,7 +117,7 @@ export default function Page4() {
       if (data.accountName) setUserName(data.accountName);
     }
     getUserInfo();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

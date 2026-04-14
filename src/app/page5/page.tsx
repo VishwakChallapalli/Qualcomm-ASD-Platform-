@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '@/styles/page5.module.css';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -61,6 +62,7 @@ function parseStats(raw: Record<string, unknown> | undefined): GameStats {
 }
 
 export default function Page5() {
+  const router = useRouter();
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [avatarColor, setAvatarColor] = useState<string>('#4a90e2');
   const [userName, setUserName] = useState<string>('User');
@@ -79,7 +81,11 @@ export default function Page5() {
   useEffect(() => {
     async function loadAllData() {
       const meRes = await fetch('/api/me', { headers: sessionHeaders() }).catch(() => null);
-      if (meRes?.ok) {
+      if (!meRes || meRes.status === 401) {
+        router.replace('/login');
+        return;
+      }
+      if (meRes.ok) {
         const me = await meRes.json();
         if (me.avatarId)    setSelectedAvatar(me.avatarId);
         if (me.avatarColor) setAvatarColor(me.avatarColor);
@@ -100,7 +106,7 @@ export default function Page5() {
       }
     }
     loadAllData();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

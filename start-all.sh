@@ -1,34 +1,4 @@
 #!/bin/bash
-
-# Start All Servers
-# This script provides instructions for running all servers
-
-echo "═══════════════════════════════════════════════════════════"
-echo "  Qualcomm ASD Platform - Server Startup Guide"
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-echo "You need to run 3 servers in separate terminals:"
-echo ""
-echo "📱 TERMINAL 1 - Frontend (Next.js):"
-echo "   ./start-frontend.sh"
-echo "   → http://localhost:3000"
-echo ""
-echo "🔧 TERMINAL 2 - Backend (Express + MongoDB):"
-echo "   ./start-backend.sh"
-echo "   → http://localhost:5001"
-echo ""
-echo "🎮 TERMINAL 3 - Admin Console:"
-echo "   ./start-admin.sh"
-echo "   → http://127.0.0.1:8001"
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-echo "Quick Start Commands:"
-echo ""
-echo "  Terminal 1:  ./start-frontend.sh"
-echo "  Terminal 2:  ./start-backend.sh"
-echo "  Terminal 3:  ./start-admin.sh"
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-read -p "Press Enter to continue..."
+# Start Next.js + Express + Emotion + Whisper in one terminal (see README).
+cd "$(dirname "$0")" || exit 1
+exec npm run dev:all

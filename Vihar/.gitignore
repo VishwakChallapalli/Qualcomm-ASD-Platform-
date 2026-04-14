@@ -1,7 +1,0 @@
-# Ignore large model files
-models/
-__pycache__/
-*.h5
-*.onnx
-*.DS_Store
-screenshots/

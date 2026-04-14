@@ -5,6 +5,16 @@
   --background:    #ffffff;
   --foreground:    #171717;
 
+  /* Brand accent (matches landing / auth cyan) */
+  --accent:          #00d4ff;
+  --accent-rgb:      0, 212, 255;
+  --accent-bright:   #00ffd1;
+  --accent-soft:     rgba(var(--accent-rgb), 0.12);
+  --accent-glow:     rgba(var(--accent-rgb), 0.35);
+
+  /* Deep navy used on splash / dark surfaces */
+  --app-ink:         #1b1b2f;
+
   /* Semantic tokens used across pages */
   --bg:            #f4f7fb;
   --surface:       #ffffff;
@@ -21,20 +31,20 @@
 
 /* ── Dark theme ────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --background:    #0d1117;
-  --foreground:    #e6edf3;
+  --background:    #131528;
+  --foreground:    #e8ecf3;
 
-  --bg:            #0d1117;
-  --surface:       #161b22;
-  --surface2:      #1c2128;
-  --border:        #30363d;
-  --border2:       #30363d;
-  --text-primary:  #e6edf3;
-  --text-secondary:#8b949e;
-  --text-muted:    #6e7681;
-  --hover-bg:      #21262d;
-  --input-bg:      #1c2128;
-  --stat-bg:       #1c2128;
+  --bg:            #131528;
+  --surface:       #1a1c2e;
+  --surface2:      #222338;
+  --border:        #34384e;
+  --border2:       #3d4158;
+  --text-primary:  #e8ecf3;
+  --text-secondary:#a8b0c4;
+  --text-muted:    #7c8498;
+  --hover-bg:      #2a2d42;
+  --input-bg:      #1e2133;
+  --stat-bg:       #1e2133;
 }
 
 @theme inline {
@@ -47,7 +57,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   margin: 0;
   padding: 0;
   overflow: hidden;

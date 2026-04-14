@@ -7,7 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/page4');
+    router.replace('/page1');
   }, [router]);
 
   return null;

@@ -7,13 +7,13 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  background: #f7f7f7;
+  background: var(--bg);
 }
 
 /* Top Header Bar */
 .topHeader {
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   padding: 0.75rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -218,7 +218,7 @@
 }
 
 .progressFill {
-  background: #00d4ff;
+  background: var(--accent);
   height: 100%;
   width: 0%;
   border-radius: 10px;
@@ -288,7 +288,7 @@
 }
 
 .bioLink {
-  color: #00d4ff;
+  color: var(--accent);
   text-decoration: none;
 }
 
@@ -298,9 +298,9 @@
 
 .editProfileButton {
   padding: 0.5rem 1.5rem;
-  border: 1px solid #00d4ff;
+  border: 1px solid var(--accent);
   background: #fff;
-  color: #00d4ff;
+  color: var(--accent);
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.875rem;
@@ -310,7 +310,7 @@
 }
 
 .editProfileButton:hover {
-  background: #00d4ff;
+  background: var(--accent);
   color: #fff;
 }
 
@@ -334,8 +334,8 @@
 
 .badge:nth-child(1),
 .badge:nth-child(2) {
-  background: #00d4ff;
-  border-color: #00d4ff;
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 /* Sidebar Navigation */
@@ -376,8 +376,8 @@
 }
 
 .navLink.active {
-  background: rgba(0, 212, 255, 0.1);
-  color: #00d4ff;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -402,36 +402,20 @@
   gap: 0.75rem;
 }
 
-.adminLink {
-  padding: 0.5rem 1.25rem;
-  border-radius: 20px;
-  background: rgba(124, 92, 255, 0.15);
-  color: #7c5cff;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid rgba(124, 92, 255, 0.35);
-  transition: all 0.2s ease;
-}
-
-.adminLink:hover {
-  background: rgba(124, 92, 255, 0.25);
-  box-shadow: 0 6px 16px rgba(124, 92, 255, 0.25);
-}
-
 .achievementsLink {
   padding: 0.5rem 1.25rem;
   border-radius: 20px;
-  background: rgba(0, 212, 255, 0.15);
-  color: #00bcd4;
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent);
   font-weight: 600;
   text-decoration: none;
-  border: 1px solid rgba(0, 212, 255, 0.35);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
   transition: all 0.2s ease;
 }
 
 .achievementsLink:hover {
-  background: rgba(0, 212, 255, 0.25);
-  box-shadow: 0 6px 16px rgba(0, 212, 255, 0.25);
+  background: rgba(var(--accent-rgb), 0.25);
+  box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.25);
 }
 
 .contentTitle {
@@ -477,7 +461,7 @@
 }
 
 .seeAllLink {
-  color: #00d4ff;
+  color: var(--accent);
   text-decoration: none;
   font-size: 0.875rem;
 }
@@ -497,7 +481,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: #f7f7f7;
+  background: var(--bg);
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   transition: all 0.2s ease;
@@ -508,7 +492,7 @@
 
 .courseItem:hover {
   background: #f0f0f0;
-  border-color: #00d4ff;
+  border-color: var(--accent);
 }
 
 .courseIcon {
@@ -541,7 +525,7 @@
 .startButton {
   padding: 0.5rem 1.5rem;
   border: none;
-  background: #00d4ff;
+  background: var(--accent);
   color: #fff;
   border-radius: 20px;
   cursor: pointer;
@@ -569,14 +553,14 @@
 }
 
 .addCourseSection:hover {
-  border-color: #00d4ff;
-  background: #f7f7f7;
+  border-color: var(--accent);
+  background: var(--bg);
 }
 
 .addCourseBox {
   width: 120px;
   height: 120px;
-  background: #f7f7f7;
+  background: var(--bg);
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   display: flex;
@@ -786,7 +770,7 @@
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding: 1.25rem;
-  background: #f7f7f7;
+  background: var(--bg);
   border-radius: 12px;
 }
 
@@ -841,8 +825,8 @@
 }
 
 .editInput:focus {
-  border-color: #00d4ff;
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 /* Avatar grid inside modal */
@@ -853,7 +837,7 @@
 }
 
 .editAvatarCard {
-  background: #f7f7f7;
+  background: var(--bg);
   border: 2px solid #e0e0e0;
   border-radius: 10px;
   padding: 0.75rem 0.5rem;
@@ -866,14 +850,14 @@
 }
 
 .editAvatarCard:hover {
-  border-color: #00d4ff;
+  border-color: var(--accent);
   background: #f0fbff;
 }
 
 .editAvatarCard.editAvatarSelected {
-  border-color: #00d4ff;
-  background: rgba(0, 212, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
 }
 
 .editAvatarCircle {
@@ -941,7 +925,7 @@
   width: 100%;
   padding: 0.875rem;
   border: none;
-  background: #00d4ff;
+  background: var(--accent);
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
@@ -954,7 +938,7 @@
 .saveButton:hover:not(:disabled) {
   background: #00b8d4;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.35);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35);
 }
 
 .saveButton:disabled {
@@ -1005,7 +989,7 @@
 :global([data-theme="dark"]) .courseItem:hover    { background: var(--hover-bg); }
 :global([data-theme="dark"]) .courseName          { color: var(--text-primary); }
 :global([data-theme="dark"]) .addCourseSection    { border-color: var(--border); }
-:global([data-theme="dark"]) .addCourseSection:hover { background: var(--hover-bg); border-color: #667eea; }
+:global([data-theme="dark"]) .addCourseSection:hover { background: var(--hover-bg); border-color: var(--accent); }
 :global([data-theme="dark"]) .addCourseBox        { background: var(--surface2); border-color: var(--border); }
 :global([data-theme="dark"]) .addCourseText       { color: var(--text-secondary); }
 :global([data-theme="dark"]) .gameCard            { background: var(--surface); border-color: var(--border); }
@@ -1021,6 +1005,6 @@
 :global([data-theme="dark"]) .editLabel           { color: var(--text-secondary); }
 :global([data-theme="dark"]) .editInput           { background: var(--input-bg); border-color: var(--border); color: var(--text-primary); }
 :global([data-theme="dark"]) .editAvatarCard      { background: var(--surface2); border-color: var(--border); }
-:global([data-theme="dark"]) .editAvatarCard:hover { border-color: #00d4ff; background: rgba(0,212,255,0.06); }
+:global([data-theme="dark"]) .editAvatarCard:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.06); }
 :global([data-theme="dark"]) .editAvatarName      { color: var(--text-secondary); }
 :global([data-theme="dark"]) .saveError           { background: rgba(229,62,62,0.12); }

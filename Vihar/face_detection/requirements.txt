@@ -1,8 +1,0 @@
-opencv-python
-deepface
-mediapipe
-otlib
-scikit-learn
-Pillow
-numpy
-pandas

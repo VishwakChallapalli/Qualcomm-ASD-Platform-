@@ -149,13 +149,14 @@ class TrackerThread(threading.Thread):
         t.start()
 
     # ── Lite simulation ───────────────────────────────────────────────────────
-    def _run_lite(self):
+    def _run_lite(self, error_key: str = "lite_mode"):
+        """Cycled fake emotions when ViT/camera path is unavailable."""
         emotions = ["neutral", "happy", "surprised", "sad", "neutral", "happy"]
         idx = 0
         with state_lock:
             state["running"]       = True
             state["session_start"] = time.strftime("%H:%M:%S")
-            state["error"]         = "lite_mode"
+            state["error"]         = error_key
         while not self.stop_event.is_set():
             with state_lock:
                 state["emotion"]      = emotions[idx % len(emotions)]
@@ -174,14 +175,14 @@ class TrackerThread(threading.Thread):
         cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         face_detector = cv2.CascadeClassifier(cascade_path)
         if face_detector.empty():
-            with state_lock:
-                state["error"] = "cascade_load_failed"
+            print("⚠ Haar cascade failed — using simulated emotions (no camera model)")
+            self._run_lite("simulated_cascade_failed")
             return
 
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
-            with state_lock:
-                state["error"] = "camera_unavailable"
+            print("⚠ Webcam not available (no camera, denied permission, or busy) — using simulated emotions")
+            self._run_lite("simulated_no_webcam")
             return
 
         cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
@@ -246,16 +247,46 @@ class TrackerThread(threading.Thread):
 
 _tracker: None = None
 
-# ── REST API ──────────────────────────────────────────────────────────────────
+# ── REST API ─────────────────────────────────────────────────────────────────-
+
+@app.route("/")
+def root():
+    """Browser-friendly landing — API only; games poll GET /emotion."""
+    mode = "full" if FULL_MODEL else "lite"
+    with state_lock:
+        running = state["running"]
+        err = state["error"]
+    status_line = f"<p><strong>Tracker running:</strong> {running}. <strong>State error:</strong> <code>{err}</code></p>"
+    html = f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Emotion server</title></head>
+<body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 2rem; line-height: 1.5;">
+  <h1>Emotion API</h1>
+  <p><strong>Mode:</strong> {mode}</p>
+  {status_line}
+  <p>This address (<code>http://127.0.0.1:5050</code>) is a <strong>backend API</strong> for games and the emotion monitor.
+  There is no full website here — only JSON endpoints.</p>
+  <ul>
+    <li><a href="/status"><code>GET /status</code></a> — JSON</li>
+    <li><a href="/emotion"><code>GET /emotion</code></a> — JSON (current emotion)</li>
+  </ul>
+  <p><strong>Use the app:</strong> <a href="http://localhost:3000/page4">http://localhost:3000/page4</a></p>
+  <p style="color:#666;font-size:0.9rem">If <code>simulated_*</code> appears, the ViT path is up but webcam/cascade failed — emotions are demo values. Grant camera access or install full deps for real inference.</p>
+</body></html>"""
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+
 
 @app.route("/status")
 def status():
+    global _tracker
+    alive = bool(_tracker and _tracker.is_alive())
     with state_lock:
         return jsonify({
             "ok":      True,
             "running": state["running"],
+            "tracker_thread_alive": alive,
             "mode":    "full" if FULL_MODEL else "lite",
             "model":   state["model_name"],
+            "error":   state["error"],
         })
 
 
@@ -297,6 +328,9 @@ def start_tracker():
     with state_lock:
         if state["running"]:
             return jsonify({"ok": True, "message": "already running"})
+    # Previous thread may have exited (e.g. camera error); allow restart
+    if _tracker is not None and not _tracker.is_alive():
+        _tracker = None
     _tracker = TrackerThread()
     _tracker.start()
     time.sleep(0.3)

@@ -2,8 +2,12 @@ export function getOrCreateSessionId(storageKey: string = "asdPlatformSessionId"
   if (typeof window === "undefined") return "";
   let id = localStorage.getItem(storageKey);
   if (!id) {
-    id = (crypto as any).randomUUID?.() || `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    localStorage.setItem(storageKey, id);
+    const newId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(storageKey, newId);
+    return newId;
   }
   return id;
 }

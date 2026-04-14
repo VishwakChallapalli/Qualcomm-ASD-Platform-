@@ -49,25 +49,25 @@
   align-items: center;
   gap: 7px;
   background: rgba(10, 10, 20, 0.82);
-  border: 1px solid var(--accent, #94a3b8);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
   backdrop-filter: blur(14px);
   border-radius: 50px;
   padding: 7px 16px 7px 10px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 0 14px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent, #94a3b8)20;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(var(--accent-rgb), 0.18);
   user-select: none;
 }
 
 .pill:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 12px var(--accent, #94a3b8)44;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(var(--accent-rgb), 0.22);
 }
 
 .liveDot {
   width: 7px;
   height: 7px;
-  background: var(--accent, #4ade80);
+  background: var(--accent);
   border-radius: 50%;
   animation: pulse 1.8s infinite;
   flex-shrink: 0;
@@ -95,7 +95,7 @@
 .label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--accent, #94a3b8);
+  color: rgba(226, 232, 240, 0.92);
   letter-spacing: 0.03em;
   min-width: 60px;
 }
@@ -108,12 +108,12 @@
 /* ── Expanded panel ─────────────────────────────────────────────────────────── */
 .panel {
   background: rgba(8, 8, 20, 0.92);
-  border: 1px solid var(--accent, #94a3b8);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
   border-radius: 16px;
   padding: 16px;
   width: 230px;
   backdrop-filter: blur(20px);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 20px var(--accent, #94a3b8)22;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--accent-rgb), 0.14);
   animation: slideDown 0.2s ease;
 }
 
@@ -277,10 +277,10 @@
 }
 
 .activeModel {
-  background: var(--accent, #94a3b8);
-  color: #0f172a;
+  background: rgba(var(--accent-rgb), 0.32);
+  color: #f8fafc;
 }
 
 .activeModel:hover {
-  color: #0f172a;
+  color: #ffffff;
 }

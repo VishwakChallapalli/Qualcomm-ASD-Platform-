@@ -1,68 +1,135 @@
 .container {
+  position: relative;
+  isolation: isolate;
   width: 100%;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: var(--app-ink);
 }
 
-.overlay {
+.bendsBackground {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
+  z-index: 0;
+  min-height: 100%;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+/* Centered hero + CTA; leave headroom for fixed EmotionMonitor (~top 16px). */
+.middleColumn {
+  position: relative;
   z-index: 100;
+  isolation: isolate;
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 3rem 2rem;
-  gap: 2rem;
+  justify-content: center;
+  padding: clamp(4.5rem, 11vh, 7rem) clamp(1rem, 4vw, 2rem) clamp(1.5rem, 4vh, 2.5rem);
+  pointer-events: none;
+  transform: translateZ(0);
 }
 
-.title {
-  font-size: 3rem;
-  font-weight: bold;
-  color: white;
+.heroBlock {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.titleWrap {
   margin: 0;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-  letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: min(96vw, 80rem);
+  color: #fff;
+  text-shadow: 0 0.08em 0.4em rgba(0, 0, 0, 0.45);
+}
+
+.titleMain {
+  text-align: center;
+  font-size: clamp(2.75rem, 11vw, 11.5rem);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.titleAccent {
+  margin-top: 0.28em;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.05rem, 3.5vw, 3rem);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.98;
+  text-align: center;
+}
+
+.ctaStack {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(2rem, 5.5vh, 3.75rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(1rem, 2.5vh, 1.35rem);
+  pointer-events: auto;
 }
 
 .enterButton {
-  padding: 1rem 3rem;
-  border: 2px solid white;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  padding: clamp(1.1rem, 2.2vh, 1.35rem) clamp(3.25rem, 10vw, 5.5rem);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  background: transparent;
   color: white;
-  border-radius: 50px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 1.25rem;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.35rem, 3.2vw, 1.85rem);
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease,
+    box-shadow 0.25s ease;
   text-decoration: none;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
 }
 
 .enterButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: #00d4ff;
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+  border-color: var(--accent-bright);
+  color: #f0fffe;
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(var(--accent-rgb), 0.28);
 }
 
-.enterButtonContainer {
-  position: absolute;
-  bottom: 3rem;
-  left: 0;
-  right: 0;
-  z-index: 100;
+.subEnterRow {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 0.35rem;
+}
+
+.subEnterText {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+}
+
+.loginLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
 }
 
 .header {

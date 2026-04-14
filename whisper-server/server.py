@@ -51,6 +51,28 @@ except ImportError:
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
+@app.route("/")
+def root():
+    """Browser-friendly landing — there is no web UI; the app calls /status and POST /transcribe."""
+    ok = WHISPER_OK and FFMPEG_OK
+    status_badge = "✓ ready" if ok else "⚠ not ready (check terminal / ffmpeg)"
+    html = f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Whisper server</title></head>
+<body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 2rem; line-height: 1.5;">
+  <h1>Whisper STT API</h1>
+  <p><strong>Status:</strong> {status_badge}</p>
+  <p>This address (<code>http://127.0.0.1:5051</code>) is a <strong>backend API</strong> for the
+  <em>Story Reader</em> game in the Next.js app. Opening it in a browser used to show 404 on <code>/</code>
+  because there was no HTML page — only JSON endpoints below.</p>
+  <ul>
+    <li><a href="/status"><code>GET /status</code></a> — JSON (whisper + ffmpeg ok?)</li>
+    <li><code>POST /transcribe</code> — multipart form field <code>audio</code> (used by the game only)</li>
+  </ul>
+  <p><strong>Use the app:</strong> <a href="http://localhost:3000/games/story-reader">http://localhost:3000/games/story-reader</a></p>
+</body></html>"""
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+
+
 @app.route("/status")
 def status():
     return jsonify({

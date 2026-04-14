@@ -51,6 +51,23 @@ const EMOTION_COLOR: Record<string, string> = {
 const SERVER = "http://127.0.0.1:5050";
 const POLL_MS = 2000;
 
+function serverErrorHint(error: string | null | undefined): string | null {
+  if (!error) return null;
+  switch (error) {
+    case "lite_mode":
+      return "Lite mode: ViT stack not installed or disabled — emotions are simulated.";
+    case "simulated_no_webcam":
+      return "No webcam (or permission denied): simulated emotions only. Allow camera access for this app.";
+    case "simulated_cascade_failed":
+      return "OpenCV face cascade failed to load — simulated emotions only.";
+    default:
+      if (error.startsWith("simulated_")) {
+        return `Simulated pipeline (${error.replace(/^simulated_/, "")}) — not using live ViT + camera.`;
+      }
+      return null;
+  }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function EmotionMonitor() {
   const [data, setData] = useState<EmotionData | null>(null);
@@ -133,6 +150,7 @@ export default function EmotionMonitor() {
   const color = EMOTION_COLOR[emotion] ?? "#94a3b8";
   const looking = data?.looking_at_screen ?? false;
   const faceFound = data?.face_detected ?? false;
+  const errorHint = serverErrorHint(data?.error);
 
   return (
     <div
@@ -228,9 +246,9 @@ export default function EmotionMonitor() {
             </button>
           </div>
 
-          {data?.error === "lite_mode" && (
-            <div className={styles.warning}>
-              ⚠ Lite mode — install deps for real detection
+          {errorHint && (
+            <div className={styles.warning} role="status">
+              ⚠ {errorHint}
             </div>
           )}
         </div>

@@ -142,7 +142,7 @@ export default function SignupPage() {
 
             {/* NAVIGATION */}
             <div className={styles.navBar}>
-                <Link href="/" className={styles.navButton}>
+                <Link href="/page1" className={styles.navButton}>
                     ← Home
                 </Link>
             </div>

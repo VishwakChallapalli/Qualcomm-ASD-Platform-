@@ -1,3 +1,5 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
@@ -8,14 +10,14 @@ import cookieParser from "cookie-parser";
 import QuizScore from "./models/QuizScore.js";
 import { QUIZ_SYSTEM_PROMPT } from "./quizPrompt.js";
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, ".env") });
 const app = express();
 
 // In dev, allow bypassing auth so the app can be demoed without login/signup.
 // Set AUTH_BYPASS=false to force auth in dev, or AUTH_BYPASS=true in prod if needed (not recommended).
-const AUTH_BYPASS = String(
-    process.env.AUTH_BYPASS ?? (process.env.NODE_ENV !== "production" ? "true" : "false")
-).toLowerCase() === "true";
+// Default false so the app uses real login/signup. Set AUTH_BYPASS=true in .env for demo-only guest mode.
+const AUTH_BYPASS = String(process.env.AUTH_BYPASS ?? "false").toLowerCase() === "true";
 
 function guestUser() {
     return {
